@@ -319,7 +319,8 @@ can both refer to `a`, which is what we did in Listing 15-18.
 
 After we’ve created the lists in `a`, `b`, and `c`, we want to add 10 to the
 value in `value`. We do this by calling `borrow_mut` on `value`, which uses the
-automatic dereferencing feature we discussed in Chapter 4 to
+automatic dereferencing feature we discussed in Chapter 5 (see the section
+[“Where’s the `->` Operator?”][wheres-the---operator]<!-- ignore -->) to
 dereference the `Rc<T>` to the inner `RefCell<T>` value. The `borrow_mut`
 method returns a `RefMut<T>` smart pointer, and we use the dereference operator
 on it and change the inner value.
@@ -339,7 +340,5 @@ sometimes worth trading a bit of speed for this flexibility in our data
 structures. Note that `RefCell<T>` does not work for multithreaded code!
 `Mutex<T>` is the thread-safe version of `RefCell<T>` and we’ll discuss
 `Mutex<T>` in Chapter 16.
-
-{{#quiz ../quizzes/ch15-05-interior-mutability.toml}}
 
 [wheres-the---operator]: ch05-03-method-syntax.html#wheres-the---operator

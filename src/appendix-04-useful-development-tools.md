@@ -95,7 +95,7 @@ fn main() {
 The `for` loop variable is now named `_i`, and the warning no longer appears.
 
 You can also use the `cargo fix` command to transition your code between
-different Rust editions. Editions are covered in [Appendix E][editions].
+different Rust editions. Editions are covered in Appendix E.
 
 ### More Lints with Clippy
 
@@ -178,4 +178,3 @@ particular IDE. Your IDE will gain abilities such as autocompletion, jump to
 definition, and inline errors.
 
 [rust-analyzer]: https://rust-analyzer.github.io
-[editions]: appendix-05-editions.md

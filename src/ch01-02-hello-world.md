@@ -49,7 +49,7 @@ convention is to use an underscore to separate them. For example, use
 
 Now open the *main.rs* file you just created and enter the code in Listing 1-1.
 
-<Listing number="1-1" file-name="main.rs" caption="A program that prints `Hello, world!`">
+<span class="filename">Filename: main.rs</span>
 
 ```rust
 fn main() {
@@ -57,7 +57,7 @@ fn main() {
 }
 ```
 
-</Listing>
+<span class="caption">Listing 1-1: A program that prints `Hello, world!`</span>
 
 Save the file and go back to your terminal window in the
 *~/projects/hello_world* directory. On Linux or macOS, enter the following
@@ -197,8 +197,5 @@ grows, you’ll want to manage all the options and make it easy to share your
 code. Next, we’ll introduce you to the Cargo tool, which will help you write
 real-world Rust programs.
 
-{{#quiz ../quizzes/ch01-02-hello-world.toml}}
-
-
 [troubleshooting]: ch01-01-installation.html#troubleshooting
-[devtools]: appendix-04-useful-development-tools.html
+[devtools]: appendix-04-useful-development-tools.md

@@ -4,74 +4,64 @@ Lifetimes are another kind of generic that we’ve already been using. Rather
 than ensuring that a type has the behavior we want, lifetimes ensure that
 references are valid as long as we need them to be.
 
-One detail we discussed briefly in Chapter 4, ["Permissions Are Returned At The End of a Reference's Lifetime"][lifetime-permissions] is
+One detail we didn’t discuss in the [“References and
+Borrowing”][references-and-borrowing]<!-- ignore --> section in Chapter 4 is
 that every reference in Rust has a *lifetime*, which is the scope for which
 that reference is valid. Most of the time, lifetimes are implicit and inferred,
-just like most of the time, types are inferred. We must annotate types only
+just like most of the time, types are inferred. We only must annotate types
 when multiple types are possible. In a similar way, we must annotate lifetimes
 when the lifetimes of references could be related in a few different ways. Rust
 requires us to annotate the relationships using generic lifetime parameters to
 ensure the actual references used at runtime will definitely be valid.
 
-Annotating lifetimes is not a concept most other programming languages have, so
-this is going to feel unfamiliar. Although we won’t cover lifetimes in their
-entirety in this chapter, we’ll discuss common ways you might encounter
+Annotating lifetimes is not even a concept most other programming languages
+have, so this is going to feel unfamiliar. Although we won’t cover lifetimes in
+their entirety in this chapter, we’ll discuss common ways you might encounter
 lifetime syntax so you can get comfortable with the concept.
 
 ### Preventing Dangling References with Lifetimes
 
 The main aim of lifetimes is to prevent *dangling references*, which cause a
 program to reference data other than the data it’s intended to reference.
-Consider the unsafe program in Listing 10-16, which has an outer scope and an inner
+Consider the program in Listing 10-16, which has an outer scope and an inner
 scope.
 
-<!-- TODO(aquascope): support for nested scopes -->
-
 ```rust,ignore,does_not_compile
-fn main() {
-    let r;
-
-    {
-        let x = 5;
-        r = &x;
-    }
-
-    println!("r: {}", r);
-}
+{{#rustdoc_include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-16/src/main.rs}}
 ```
 
 <span class="caption">Listing 10-16: An attempt to use a reference whose value
 has gone out of scope</span>
 
-> Note: The examples in Listing 10-16, 10-17, and 10-23 declare variables
-> without giving them an initial value, so the variable name exists in the outer
-> scope. At first glance, this might appear to be in conflict with Rust’s having
-> no null values. However, if we try to use a variable before giving it a value,
-> we’ll get a compile-time error, which shows that Rust indeed does not allow
-> null values.
+> Note: The examples in Listings 10-16, 10-17, and 10-23 declare variables
+> without giving them an initial value, so the variable name exists in the
+> outer scope. At first glance, this might appear to be in conflict with Rust’s
+> having no null values. However, if we try to use a variable before giving it
+> a value, we’ll get a compile-time error, which shows that Rust indeed does
+> not allow null values.
 
 The outer scope declares a variable named `r` with no initial value, and the
-inner scope declares a variable named `x` with the initial value of `5`. Inside
+inner scope declares a variable named `x` with the initial value of 5. Inside
 the inner scope, we attempt to set the value of `r` as a reference to `x`. Then
 the inner scope ends, and we attempt to print the value in `r`. This code won’t
-compile because the value that `r` is referring to has gone out of scope before
-we try to use it. Here is the error message:
+compile because the value `r` is referring to has gone out of scope before we
+try to use it. Here is the error message:
 
 ```console
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-16/output.txt}}
 ```
 
-The error message says that the variable `x` “does not live long enough.” The
-reason is that `x` will be out of scope when the inner scope ends on line 7.
-But `r` is still valid for the outer scope; because its scope is larger, we say
-that it “lives longer.” If Rust allowed this code to work, `r` would be
-referencing memory that was deallocated when `x` went out of scope, and
-anything we tried to do with `r` wouldn’t work correctly. So how does Rust
-determine that this code is invalid? It uses a borrow checker.
+The variable `x` doesn’t “live long enough.” The reason is that `x` will be out
+of scope when the inner scope ends on line 7. But `r` is still valid for the
+outer scope; because its scope is larger, we say that it “lives longer.” If
+Rust allowed this code to work, `r` would be referencing memory that was
+deallocated when `x` went out of scope, and anything we tried to do with `r`
+wouldn’t work correctly. So how does Rust determine that this code is invalid?
+It uses a borrow checker.
 
-### The Borrow Checker Ensures Data Outlives Its References
+### The Borrow Checker
 
-The Rust compiler's borrow checker will compare scopes to determine
+The Rust compiler has a *borrow checker* that compares scopes to determine
 whether all borrows are valid. Listing 10-17 shows the same code as Listing
 10-16 but with annotations showing the lifetimes of the variables.
 
@@ -89,7 +79,7 @@ lifetimes and sees that `r` has a lifetime of `'a` but that it refers to memory
 with a lifetime of `'b`. The program is rejected because `'b` is shorter than
 `'a`: the subject of the reference doesn’t live as long as the reference.
 
-Listing 10-18 fixes the code so it doesn’t have a dangling reference and it
+Listing 10-18 fixes the code so it doesn’t have a dangling reference and
 compiles without any errors.
 
 ```rust
@@ -103,7 +93,7 @@ Here, `x` has the lifetime `'b`, which in this case is larger than `'a`. This
 means `r` can reference `x` because Rust knows that the reference in `r` will
 always be valid while `x` is valid.
 
-Now that you know what the lifetimes of references are and how Rust analyzes
+Now that you know where the lifetimes of references are and how Rust analyzes
 lifetimes to ensure references will always be valid, let’s explore generic
 lifetimes of parameters and return values in the context of functions.
 
@@ -190,7 +180,7 @@ reference to an `i32` that also has the lifetime `'a`.
 &'a mut i32 // a mutable reference with an explicit lifetime
 ```
 
-One lifetime annotation by itself doesn’t have much meaning because the
+One lifetime annotation by itself doesn’t have much meaning, because the
 annotations are meant to tell Rust how generic lifetime parameters of multiple
 references relate to each other. Let’s examine how the lifetime annotations
 relate to each other in the context of the `longest` function.
@@ -270,7 +260,7 @@ references to `String` values that have different concrete lifetimes</span>
 
 In this example, `string1` is valid until the end of the outer scope, `string2`
 is valid until the end of the inner scope, and `result` references something
-that is valid until the end of the inner scope. Run this code and you’ll see
+that is valid until the end of the inner scope. Run this code, and you’ll see
 that the borrow checker approves; it will compile and print `The longest string
 is long string is long`.
 
@@ -303,7 +293,7 @@ this because we annotated the lifetimes of the function parameters and return
 values using the same lifetime parameter `'a`.
 
 As humans, we can look at this code and see that `string1` is longer than
-`string2`, and therefore, `result` will contain a reference to `string1`.
+`string2` and therefore `result` will contain a reference to `string1`.
 Because `string1` has not gone out of scope yet, a reference to `string1` will
 still be valid for the `println!` statement. However, the compiler can’t see
 that the reference is valid in this case. We’ve told Rust that the lifetime of
@@ -315,8 +305,6 @@ Try designing more experiments that vary the values and lifetimes of the
 references passed in to the `longest` function and how the returned reference
 is used. Make hypotheses about whether or not your experiments will pass the
 borrow checker before you compile; then check to see if you’re right!
-
-{{#quiz ../quizzes/ch10-03-lifetimes-sec1.toml}}
 
 ### Thinking in Terms of Lifetimes
 
@@ -374,9 +362,9 @@ would create dangling pointers or otherwise violate memory safety.
 
 ### Lifetime Annotations in Struct Definitions
 
-So far, the structs we’ve defined all hold owned types. We can define structs
-to hold references, but in that case we would need to add a lifetime annotation
-on every reference in the struct’s definition. Listing 10-24 has a struct named
+So far, the structs we’ve defined all hold owned types. We can define structs to
+hold references, but in that case we would need to add a lifetime annotation on
+every reference in the struct’s definition. Listing 10-24 has a struct named
 `ImportantExcerpt` that holds a string slice.
 
 <span class="filename">Filename: src/main.rs</span>
@@ -405,9 +393,9 @@ the `ImportantExcerpt` goes out of scope, so the reference in the
 ### Lifetime Elision
 
 You’ve learned that every reference has a lifetime and that you need to specify
-lifetime parameters for functions or structs that use references. However, we
-had a function in Listing 4-9, shown again in Listing 10-25, that compiled
-without lifetime annotations.
+lifetime parameters for functions or structs that use references. However, in
+Chapter 4 we had a function in Listing 4-9, shown again in Listing 10-25, that
+compiled without lifetime annotations.
 
 <span class="filename">Filename: src/lib.rs</span>
 
@@ -444,11 +432,11 @@ The patterns programmed into Rust’s analysis of references are called the
 a set of particular cases that the compiler will consider, and if your code
 fits these cases, you don’t need to write the lifetimes explicitly.
 
-The elision rules don’t provide full inference. If there is still ambiguity as
-to what lifetimes the references have after Rust applies the rules, the
-compiler won’t guess what the lifetime of the remaining references should be.
-Instead of guessing, the compiler will give you an error that you can resolve
-by adding the lifetime annotations.
+The elision rules don’t provide full inference. If Rust deterministically
+applies the rules but there is still ambiguity as to what lifetimes the
+references have, the compiler won’t guess what the lifetime of the remaining
+references should be. Instead of guessing, the compiler will give you an error
+that you can resolve by adding the lifetime annotations.
 
 Lifetimes on function or method parameters are called *input lifetimes*, and
 lifetimes on return values are called *output lifetimes*.
@@ -460,12 +448,11 @@ compiler gets to the end of the three rules and there are still references for
 which it can’t figure out lifetimes, the compiler will stop with an error.
 These rules apply to `fn` definitions as well as `impl` blocks.
 
-<!-- BEGIN INTERVENTION: d03748df-8dcf-4ec8-bd30-341927544665 -->
-The first rule is that the compiler assigns a different lifetime parameter to each lifetime in each input type. References like `&'_ i32` need a lifetime parameter, and structures like `ImportantExcerpt<'_>` need a lifetime parameter. For example:
-* The function `fn foo(x: &i32)` would get one lifetime parameter and become `fn foo<'a>(x: &'a i32)`. 
-* The function `fn foo(x: &i32, y: &i32)` would get two lifetime parameters and become `fn foo<'a, 'b>(x: &'a i32, y: &'b i32)`.
-* The function `fn foo(x: &ImportantExcerpt)` would get two lifetime parameters and become `fn foo<'a, 'b>(x: &'a ImportantExcerpt<'b>)`.
-<!-- END INTERVENTION -->
+The first rule is that the compiler assigns a lifetime parameter to each
+parameter that’s a reference. In other words, a function with one parameter gets
+one lifetime parameter: `fn foo<'a>(x: &'a i32)`; a function with two
+parameters gets two separate lifetime parameters: `fn foo<'a, 'b>(x: &'a i32,
+y: &'b i32)`; and so on.
 
 The second rule is that, if there is exactly one input lifetime parameter, that
 lifetime is assigned to all output lifetime parameters: `fn foo<'a>(x: &'a i32)
@@ -539,7 +526,7 @@ use the lifetime parameters depends on whether they’re related to the struct
 fields or the method parameters and return values.
 
 Lifetime names for struct fields always need to be declared after the `impl`
-keyword and then used after the struct’s name because those lifetimes are part
+keyword and then used after the struct’s name, because those lifetimes are part
 of the struct’s type.
 
 In method signatures inside the `impl` block, references might be tied to the
@@ -548,7 +535,7 @@ addition, the lifetime elision rules often make it so that lifetime annotations
 aren’t necessary in method signatures. Let’s look at some examples using the
 struct named `ImportantExcerpt` that we defined in Listing 10-24.
 
-First we’ll use a method named `level` whose only parameter is a reference to
+First, we’ll use a method named `level` whose only parameter is a reference to
 `self` and whose return value is an `i32`, which is not a reference to anything:
 
 ```rust
@@ -580,8 +567,9 @@ string literals have the `'static` lifetime, which we can annotate as follows:
 let s: &'static str = "I have a static lifetime.";
 ```
 
-The text of this string is stored directly in the program’s binary, which is
-always available. Therefore, the lifetime of all string literals is `'static`.
+The text of this string is stored directly in the program’s binary, which
+is always available. Therefore, the lifetime of all string literals is
+`'static`.
 
 You might see suggestions to use the `'static` lifetime in error messages. But
 before specifying `'static` as the lifetime for a reference, think about
@@ -589,9 +577,9 @@ whether the reference you have actually lives the entire lifetime of your
 program or not, and whether you want it to. Most of the time, an error message
 suggesting the `'static` lifetime results from attempting to create a dangling
 reference or a mismatch of the available lifetimes. In such cases, the solution
-is to fix those problems, not to specify the `'static` lifetime.
+is fixing those problems, not specifying the `'static` lifetime.
 
-### Generic Type Parameters, Trait Bounds, and Lifetimes Together
+## Generic Type Parameters, Trait Bounds, and Lifetimes Together
 
 Let’s briefly look at the syntax of specifying generic type parameters, trait
 bounds, and lifetimes all in one function!
@@ -609,9 +597,7 @@ lifetimes are a type of generic, the declarations of the lifetime parameter
 `'a` and the generic type parameter `T` go in the same list inside the angle
 brackets after the function name.
 
-{{#quiz ../quizzes/ch10-03-lifetimes-sec2.toml}}
-
-### Summary
+## Summary
 
 We covered a lot in this chapter! Now that you know about generic type
 parameters, traits and trait bounds, and generic lifetime parameters, you’re
@@ -629,7 +615,8 @@ that you will only need in very advanced scenarios; for those, you should read
 the [Rust Reference][reference]. But next, you’ll learn how to write tests in
 Rust so you can make sure your code is working the way it should.
 
+[references-and-borrowing]:
+ch04-02-references-and-borrowing.html#references-and-borrowing
 [string-slices-as-parameters]:
-ch04-04-slices.html#string-slices-as-parameters
-[reference]: https://doc.rust-lang.org/reference/index.html
-[lifetime-permissions]: ch04-02-references-and-borrowing.html#permissions-are-returned-at-the-end-of-a-references-lifetime
+ch04-03-slices.html#string-slices-as-parameters
+[reference]: ../reference/index.html

@@ -2,9 +2,7 @@
 
 ![Build Status](https://github.com/rust-lang/book/workflows/CI/badge.svg)
 
-This repository contains the source of "The Rust Programming Language" book, specifically an experimental branch that supports interactive features like quizzes.
-
-**If you discovered an issue in at <https://rust-book.cs.brown.edu/>, PLEASE report the issue on THIS REPOSITORY and not elsewhere.**
+This repository contains the source of "The Rust Programming Language" book.
 
 [The book is available in dead-tree form from No Starch Press][nostarch].
 
@@ -28,59 +26,20 @@ See the [releases] to download just the code of all the code listings that appea
 Building the book requires [mdBook], ideally the same version that
 rust-lang/rust uses in [this file][rust-mdbook]. To get it:
 
-[mdBook]: https://github.com/rust-lang/mdBook
+[mdBook]: https://github.com/rust-lang-nursery/mdBook
 [rust-mdbook]: https://github.com/rust-lang/rust/blob/master/src/tools/rustbook/Cargo.toml
 
 ```bash
-$ cargo install mdbook --locked --version <version_num>
-```
-
-This fork also requires a few mdBook preprocessors to support our experimental extensions. Follow the installation instructions at each link below.
-
-* `mdbook-aquascope`: <https://github.com/cognitive-engineering-lab/aquascope#installation>
-* `mdbook-quiz`: <https://github.com/cognitive-engineering-lab/mdbook-quiz#installation>
-
-You should install the same version of each preprocessor [used in CI](https://github.com/cognitive-engineering-lab/rust-book/blob/main/.github/workflows/main.yml).
-
-Finally, you need [pnpm](https://pnpm.io/installation).
-
-The book also uses two mdbook plugins which are part of this repository. If you
-do not install them, you will see warnings when building and the output will not
-look right, but you *will* still be able to build the book. To use the plugins,
-you should run:
-
-```bash
-$ cargo install --locked --path packages/mdbook-trpl-listing
-$ cargo install --locked --path packages/mdbook-trpl-note
+$ cargo install mdbook --version <version_num>
 ```
 
 ## Building
 
-### With cargo-make
-
-If you have [`cargo-make`] installed, then run:
-
-```bash
-$ cargo make build
-```
-
-### Without cargo-make
-
-First, build the Javascript extensions.
-
-```bash
-$ cd js-extensions
-$ pnpm init-repo
-$ cd ..
-```
-
-Then to build the book, type:
+To build the book, type:
 
 ```bash
 $ mdbook build
 ```
-
-### Output
 
 The output will be in the `book` subdirectory. To check it out, open it in
 your web browser.
@@ -104,8 +63,7 @@ $ start chrome.exe .\book\index.html            # Windows (Cmd)
 To run the tests:
 
 ```bash
-$ cd packages/trpl
-$ mdbook test --library-path packages/trpl/target/debug/deps
+$ mdbook test
 ```
 
 ## Contributing
@@ -135,15 +93,13 @@ a new language! We're waiting on [mdbook support] for multiple languages
 before we merge any in, but feel free to start!
 
 [Translations]: https://github.com/rust-lang/book/issues?q=is%3Aopen+is%3Aissue+label%3ATranslations
-[mdbook support]: https://github.com/rust-lang/mdBook/issues/5
+[mdbook support]: https://github.com/rust-lang-nursery/mdBook/issues/5
 
 ## Spellchecking
 
 To scan source files for spelling errors, you can use the `spellcheck.sh`
 script available in the `ci` directory. It needs a dictionary of valid words,
 which is provided in `ci/dictionary.txt`. If the script produces a false
-positive (say, you used the word `BTreeMap` which the script considers invalid),
+positive (say, you used word `BTreeMap` which the script considers invalid),
 you need to add this word to `ci/dictionary.txt` (keep the sorted order for
 consistency).
-
-[`cargo-make`]: https://github.com/sagiegurari/cargo-make

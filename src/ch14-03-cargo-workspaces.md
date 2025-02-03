@@ -142,13 +142,14 @@ Next, let’s use the `add_one` function (from the `add_one` crate) in the
 top to bring the new `add_one` library crate into scope. Then change the `main`
 function to call the `add_one` function, as in Listing 14-7.
 
-<Listing number="14-7" file-name="adder/src/main.rs" caption="Using the `add_one` library crate from the `adder` crate">
+<span class="filename">Filename: adder/src/main.rs</span>
 
 ```rust,ignore
 {{#rustdoc_include ../listings/ch14-more-about-cargo/listing-14-07/add/adder/src/main.rs}}
 ```
 
-</Listing>
+<span class="caption">Listing 14-7: Using the `add_one` library crate from the
+ `adder` crate</span>
 
 Let’s build the workspace by running `cargo build` in the top-level *add*
 directory!
@@ -266,22 +267,10 @@ error[E0432]: unresolved import `rand`
 To fix this, edit the *Cargo.toml* file for the `adder` package and indicate
 that `rand` is a dependency for it as well. Building the `adder` package will
 add `rand` to the list of dependencies for `adder` in *Cargo.lock*, but no
-additional copies of `rand` will be downloaded. Cargo will ensure that every
+additional copies of `rand` will be downloaded. Cargo has ensured that every
 crate in every package in the workspace using the `rand` package will be using
-the same version as long as they specify compatible versions of `rand`, saving
-us space and ensuring that the crates in the workspace will be compatible with
-each other.
-
-If crates in the workspace specify incompatible versions of the same dependency,
-Cargo will resolve each of them, but will still try to resolve as few versions
-as possible.
-
-Note that Cargo only ensures compatibility within the rules of [Semantic Versioning].
-For example, say a workspace has one crate that depends on `rand` 0.8.0, and another crate
-that depends on `rand` 0.8.1. The semver rules say that 0.8.1 is compatible with 0.8.0,
-so both crates will depend on 0.8.1 (or potentially a more recent patch, like 0.8.2). But if
-one crate depends on `rand` 0.7.0 and another on `rand` 0.8.0, those versions are semver-incompatible.
-Therefore, Cargo will use a different version of `rand` for each crate.
+the same version, saving us space and ensuring that the crates in the workspace
+will be compatible with each other.
 
 #### Adding a Test to a Workspace
 
@@ -377,7 +366,3 @@ As your project grows, consider using a workspace: it’s easier to understand
 smaller, individual components than one big blob of code. Furthermore, keeping
 the crates in a workspace can make coordination between crates easier if they
 are often changed at the same time.
-
-{{#quiz ../quizzes/ch14-03-cargo-workspaces.toml}}
-
-[Semantic Versioning]: https://semver.org/

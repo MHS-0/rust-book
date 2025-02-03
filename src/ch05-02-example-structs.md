@@ -141,7 +141,7 @@ If we continue reading the errors, we’ll find this helpful note:
 ```
 
 Let’s try it! The `println!` macro call will now look like `println!("rect1 is
-{rect1:?}");`. Putting the specifier `:?` inside the curly brackets tells
+{:?}", rect1);`. Putting the specifier `:?` inside the curly brackets tells
 `println!` we want to use an output format called `Debug`. The `Debug` trait
 enables us to print our struct in a way that is useful for developers so we can
 see its value while we’re debugging our code.
@@ -240,11 +240,9 @@ because it won’t work with any other type. Let’s look at how we can continue
 refactor this code by turning the `area` function into an `area` *method*
 defined on our `Rectangle` type.
 
-{{#quiz ../quizzes/ch05-02-example-structs.toml}}
-
 [the-tuple-type]: ch03-02-data-types.html#the-tuple-type
 [app-c]: appendix-03-derivable-traits.md
-[println]: https://doc.rust-lang.org/std/macro.println.html
-[dbg]: https://doc.rust-lang.org/std/macro.dbg.html
+[println]: ../std/macro.println.html
+[dbg]: ../std/macro.dbg.html
 [err]: ch12-06-writing-to-stderr-instead-of-stdout.html
-[attributes]: https://doc.rust-lang.org/reference/attributes.html
+[attributes]: ../reference/attributes.html

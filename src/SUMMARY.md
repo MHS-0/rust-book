@@ -1,6 +1,5 @@
 # The Rust Programming Language
 
-[Experiment Introduction](experiment-intro.md)
 [The Rust Programming Language](title-page.md)
 [Foreword](foreword.md)
 [Introduction](ch00-00-introduction.md)
@@ -24,9 +23,7 @@
 - [Understanding Ownership](ch04-00-understanding-ownership.md)
     - [What is Ownership?](ch04-01-what-is-ownership.md)
     - [References and Borrowing](ch04-02-references-and-borrowing.md)
-    - [Fixing Ownership Errors](ch04-03-fixing-ownership-errors.md)
-    - [The Slice Type](ch04-04-slices.md)
-    - [Ownership Recap](ch04-05-ownership-recap.md)
+    - [The Slice Type](ch04-03-slices.md)
 
 - [Using Structs to Structure Related Data](ch05-00-structs.md)
     - [Defining and Instantiating Structs](ch05-01-defining-structs.md)
@@ -37,7 +34,6 @@
     - [Defining an Enum](ch06-01-defining-an-enum.md)
     - [The `match` Control Flow Construct](ch06-02-match.md)
     - [Concise Control Flow with `if let`](ch06-03-if-let.md)
-    - [Ownership Inventory #1](ch06-04-inventory.md)
 
 ## Basic Rust Literacy
 
@@ -52,7 +48,6 @@
     - [Storing Lists of Values with Vectors](ch08-01-vectors.md)
     - [Storing UTF-8 Encoded Text with Strings](ch08-02-strings.md)
     - [Storing Keys with Associated Values in Hash Maps](ch08-03-hash-maps.md)
-    - [Ownership Inventory #2](ch08-04-inventory.md)
 
 - [Error Handling](ch09-00-error-handling.md)
     - [Unrecoverable Errors with `panic!`](ch09-01-unrecoverable-errors-with-panic.md)
@@ -63,7 +58,6 @@
     - [Generic Data Types](ch10-01-syntax.md)
     - [Traits: Defining Shared Behavior](ch10-02-traits.md)
     - [Validating References with Lifetimes](ch10-03-lifetime-syntax.md)
-    - [Ownership Inventory #3](ch10-04-inventory.md)
 
 - [Writing Automated Tests](ch11-00-testing.md)
     - [How to Write Tests](ch11-01-writing-tests.md)
@@ -107,41 +101,29 @@
     - [Shared-State Concurrency](ch16-03-shared-state.md)
     - [Extensible Concurrency with the `Sync` and `Send` Traits](ch16-04-extensible-concurrency-sync-and-send.md)
 
-- [Async and Await](ch17-00-async-await.md)
-    - [Futures and the Async Syntax](ch17-01-futures-and-syntax.md)
-    - [Concurrency With Async](ch17-02-concurrency-with-async.md)
-    - [Working With Any Number of Futures](ch17-03-more-futures.md)
-    - [Streams](ch17-04-streams.md)
-    - [Digging Into the Traits for Async](ch17-05-traits-for-async.md)
-    - [Futures, Tasks, and Threads](ch17-06-futures-tasks-threads.md)
-
-- [Object Oriented Programming Features of Rust](ch18-00-oop.md)
-    - [Characteristics of Object-Oriented Languages](ch18-01-what-is-oo.md)
-    - [Using Trait Objects That Allow for Values of Different Types](ch18-02-trait-objects.md)
-    - [Implementing an Object-Oriented Design Pattern](ch18-03-oo-design-patterns.md)
-    - [Ownership Inventory #4](ch18-04-inventory.md)
-    - [Design Trade-offs](ch18-05-design-challenge.md)
+- [Object Oriented Programming Features of Rust](ch17-00-oop.md)
+    - [Characteristics of Object-Oriented Languages](ch17-01-what-is-oo.md)
+    - [Using Trait Objects That Allow for Values of Different Types](ch17-02-trait-objects.md)
+    - [Implementing an Object-Oriented Design Pattern](ch17-03-oo-design-patterns.md)
 
 ## Advanced Topics
 
-- [Patterns and Matching](ch19-00-patterns.md)
-    - [All the Places Patterns Can Be Used](ch19-01-all-the-places-for-patterns.md)
-    - [Refutability: Whether a Pattern Might Fail to Match](ch19-02-refutability.md)
-    - [Pattern Syntax](ch19-03-pattern-syntax.md)
+- [Patterns and Matching](ch18-00-patterns.md)
+    - [All the Places Patterns Can Be Used](ch18-01-all-the-places-for-patterns.md)
+    - [Refutability: Whether a Pattern Might Fail to Match](ch18-02-refutability.md)
+    - [Pattern Syntax](ch18-03-pattern-syntax.md)
 
-- [Advanced Features](ch20-00-advanced-features.md)
-    - [Unsafe Rust](ch20-01-unsafe-rust.md)
-    - [Advanced Traits](ch20-03-advanced-traits.md)
-    - [Advanced Types](ch20-04-advanced-types.md)
-    - [Advanced Functions and Closures](ch20-05-advanced-functions-and-closures.md)
-    - [Macros](ch20-06-macros.md)
+- [Advanced Features](ch19-00-advanced-features.md)
+    - [Unsafe Rust](ch19-01-unsafe-rust.md)
+    - [Advanced Traits](ch19-03-advanced-traits.md)
+    - [Advanced Types](ch19-04-advanced-types.md)
+    - [Advanced Functions and Closures](ch19-05-advanced-functions-and-closures.md)
+    - [Macros](ch19-06-macros.md)
 
-- [Final Project: Building a Multithreaded Web Server](ch21-00-final-project-a-web-server.md)
-    - [Building a Single-Threaded Web Server](ch21-01-single-threaded.md)
-    - [Turning Our Single-Threaded Server into a Multithreaded Server](ch21-02-multithreaded.md)
-    - [Graceful Shutdown and Cleanup](ch21-03-graceful-shutdown-and-cleanup.md)
-
-- [End of Experiment](end-of-experiment.md)
+- [Final Project: Building a Multithreaded Web Server](ch20-00-final-project-a-web-server.md)
+    - [Building a Single-Threaded Web Server](ch20-01-single-threaded.md)
+    - [Turning Our Single-Threaded Server into a Multithreaded Server](ch20-02-multithreaded.md)
+    - [Graceful Shutdown and Cleanup](ch20-03-graceful-shutdown-and-cleanup.md)
 
 - [Appendix](appendix-00.md)
     - [A - Keywords](appendix-01-keywords.md)

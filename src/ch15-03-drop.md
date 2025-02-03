@@ -147,5 +147,3 @@ the value is no longer being used.
 Now that we’ve examined `Box<T>` and some of the characteristics of smart
 pointers, let’s look at a few other smart pointers defined in the standard
 library.
-
-{{#quiz ../quizzes/ch15-03-drop.toml}}

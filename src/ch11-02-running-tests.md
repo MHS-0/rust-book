@@ -1,14 +1,14 @@
 ## Controlling How Tests Are Run
 
-Just as `cargo run` compiles your code and then runs the resultant binary,
-`cargo test` compiles your code in test mode and runs the resultant test
+Just as `cargo run` compiles your code and then runs the resulting binary,
+`cargo test` compiles your code in test mode and runs the resulting test
 binary. The default behavior of the binary produced by `cargo test` is to run
 all the tests in parallel and capture output generated during test runs,
 preventing the output from being displayed and making it easier to read the
 output related to the test results. You can, however, specify command line
 options to change this default behavior.
 
-Some command line options go to `cargo test`, and some go to the resultant test
+Some command line options go to `cargo test`, and some go to the resulting test
 binary. To separate these two types of arguments, you list the arguments that
 go to `cargo test` followed by the separator `--` and then the ones that go to
 the test binary. Running `cargo test --help` displays the options you can use
@@ -58,13 +58,14 @@ printed to standard output with the rest of the failure message.
 As an example, Listing 11-10 has a silly function that prints the value of its
 parameter and returns 10, as well as a test that passes and a test that fails.
 
-<Listing number="11-10" file-name="src/lib.rs" caption="Tests for a function that calls `println!`">
+<span class="filename">Filename: src/lib.rs</span>
 
 ```rust,panics,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-10/src/lib.rs}}
 ```
 
-</Listing>
+<span class="caption">Listing 11-10: Tests for a function that calls
+`println!`</span>
 
 When we run these tests with `cargo test`, we’ll see the following output:
 
@@ -72,13 +73,13 @@ When we run these tests with `cargo test`, we’ll see the following output:
 {{#include ../listings/ch11-writing-automated-tests/listing-11-10/output.txt}}
 ```
 
-Note that nowhere in this output do we see `I got the value 4`, which is
-printed when the test that passes runs. That output has been captured. The
+Note that nowhere in this output do we see `I got the value 4`, which is what
+is printed when the test that passes runs. That output has been captured. The
 output from the test that failed, `I got the value 8`, appears in the section
 of the test summary output, which also shows the cause of the test failure.
 
-If we want to see printed values for passing tests as well, we can tell Rust to
-also show the output of successful tests with `--show-output`:
+If we want to see printed values for passing tests as well, we can tell Rust
+to also show the output of successful tests with `--show-output`.
 
 ```console
 $ cargo test -- --show-output
@@ -101,13 +102,14 @@ or names of the test(s) you want to run as an argument.
 To demonstrate how to run a subset of tests, we’ll first create three tests for
 our `add_two` function, as shown in Listing 11-11, and choose which ones to run.
 
-<Listing number="11-11" file-name="src/lib.rs" caption="Three tests with three different names">
+<span class="filename">Filename: src/lib.rs</span>
 
 ```rust,noplayground
 {{#rustdoc_include ../listings/ch11-writing-automated-tests/listing-11-11/src/lib.rs}}
 ```
 
-</Listing>
+<span class="caption">Listing 11-11: Three tests with three different
+names</span>
 
 If we run the tests without passing any arguments, as we saw earlier, all the
 tests will run in parallel:
@@ -157,11 +159,11 @@ here:
 <span class="filename">Filename: src/lib.rs</span>
 
 ```rust,noplayground
-{{#rustdoc_include ../listings/ch11-writing-automated-tests/no-listing-11-ignore-a-test/src/lib.rs:here}}
+{{#rustdoc_include ../listings/ch11-writing-automated-tests/no-listing-11-ignore-a-test/src/lib.rs}}
 ```
 
-After `#[test]`, we add the `#[ignore]` line to the test we want to exclude.
-Now when we run our tests, `it_works` runs, but `expensive_test` doesn’t:
+After `#[test]` we add the `#[ignore]` line to the test we want to exclude. Now
+when we run our tests, `it_works` runs, but `expensive_test` doesn’t:
 
 ```console
 {{#include ../listings/ch11-writing-automated-tests/no-listing-11-ignore-a-test/output.txt}}
@@ -175,9 +177,7 @@ the ignored tests, we can use `cargo test -- --ignored`:
 ```
 
 By controlling which tests run, you can make sure your `cargo test` results
-will be returned quickly. When you’re at a point where it makes sense to check
-the results of the `ignored` tests and you have time to wait for the results,
-you can run `cargo test -- --ignored` instead. If you want to run all tests
-whether they’re ignored or not, you can run `cargo test -- --include-ignored`.
-
-{{#quiz ../quizzes/ch11-02-running-tests.toml}}
+will be fast. When you’re at a point where it makes sense to check the results
+of the `ignored` tests and you have time to wait for the results, you can run
+`cargo test -- --ignored` instead. If you want to run all tests whether they’re
+ignored or not, you can run `cargo test -- --include-ignored`.

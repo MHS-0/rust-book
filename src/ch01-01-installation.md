@@ -59,9 +59,16 @@ the `build-essential` package.
 
 On Windows, go to [https://www.rust-lang.org/tools/install][install] and follow
 the instructions for installing Rust. At some point in the installation, you’ll
-be prompted to install Visual Studio. This provides a linker and the native
-libraries needed to compile programs. If you need more help with this step, see
-[https://rust-lang.github.io/rustup/installation/windows-msvc.html][msvc]
+receive a message explaining that you’ll also need the MSVC build tools for
+Visual Studio 2013 or later.
+
+To acquire the build tools, you’ll need to install [Visual Studio
+2022][visualstudio]. When asked which workloads to install, include:
+
+* “Desktop Development with C++”
+* The Windows 10 or 11 SDK
+* The English language pack component, along with any other language pack of
+  your choosing
 
 The rest of this book uses commands that work in both *cmd.exe* and PowerShell.
 If there are specific differences, we’ll explain which to use.
@@ -83,8 +90,8 @@ rustc x.y.z (abcabcabc yyyy-mm-dd)
 ```
 
 If you see this information, you have installed Rust successfully! If you don’t
-see this information, check that Rust is in your `PATH`
-system variable as follows.
+see this information, check that Rust is in your `%PATH%` system variable as
+follows.
 
 In Windows CMD, use:
 
@@ -134,9 +141,7 @@ Any time a type or function is provided by the standard library and you’re not
 sure what it does or how to use it, use the application programming interface
 (API) documentation to find out!
 
-{{#quiz ../quizzes/ch01-01-installation.toml}}
-
 [otherinstall]: https://forge.rust-lang.org/infra/other-installation-methods.html
 [install]: https://www.rust-lang.org/tools/install
-[msvc]: https://rust-lang.github.io/rustup/installation/windows-msvc.html
+[visualstudio]: https://visualstudio.microsoft.com/downloads/
 [community]: https://www.rust-lang.org/community

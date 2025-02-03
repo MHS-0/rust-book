@@ -73,5 +73,3 @@ optimizations than the default, but not as many as in a release build.
 
 For the full list of configuration options and defaults for each profile, see
 [Cargo’s documentation](https://doc.rust-lang.org/cargo/reference/profiles.html).
-
-{{#quiz ../quizzes/ch14-01-release-profiles.toml}}

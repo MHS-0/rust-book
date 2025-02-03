@@ -10,7 +10,7 @@ Let’s look at a situation we might want to express in code and see why enums
 are useful and more appropriate than structs in this case. Say we need to work
 with IP addresses. Currently, two major standards are used for IP addresses:
 version four and version six. Because these are the only possibilities for an
-IP address that our program will come across, we can _enumerate_ all possible
+IP address that our program will come across, we can *enumerate* all possible
 variants, which is where enumeration gets its name.
 
 Any IP address can be either a version four or a version six address, but not
@@ -54,33 +54,13 @@ And we can call this function with either variant:
 ```
 
 Using enums has even more advantages. Thinking more about our IP address type,
-at the moment we don’t have a way to store the actual IP address _data_; we
-only know what _kind_ it is. Given that you just learned about structs in
+at the moment we don’t have a way to store the actual IP address *data*; we
+only know what *kind* it is. Given that you just learned about structs in
 Chapter 5, you might be tempted to tackle this problem with structs as shown in
 Listing 6-1.
 
-```aquascope,interpreter
-#fn main() {
-enum IpAddrKind {
-    V4,
-    V6,
-}
-
-struct IpAddr {
-    kind: IpAddrKind,
-    address: String,
-}
-
-let home = IpAddr {
-    kind: IpAddrKind::V4,
-    address: String::from("127.0.0.1"),
-};
-
-let loopback = IpAddr {
-    kind: IpAddrKind::V6,
-    address: String::from("::1"),
-};`[]`
-#}
+```rust
+{{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/listing-06-01/src/main.rs:here}}
 ```
 
 <span class="caption">Listing 6-1: Storing the data and `IpAddrKind` variant of
@@ -100,17 +80,8 @@ rather than an enum inside a struct, we can put data directly into each enum
 variant. This new definition of the `IpAddr` enum says that both `V4` and `V6`
 variants will have associated `String` values:
 
-```aquascope,interpreter
-#fn main() {    
-enum IpAddr {
-    V4(String),
-    V6(String),
-}
-
-let home = IpAddr::V4(String::from("127.0.0.1"));
-
-let loopback = IpAddr::V6(String::from("::1"));`[]`
-#}
+```rust
+{{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-02-enum-with-data/src/main.rs:here}}
 ```
 
 We attach data to each variant of the enum directly, so there is no need for an
@@ -128,18 +99,8 @@ between 0 and 255. If we wanted to store `V4` addresses as four `u8` values but
 still express `V6` addresses as one `String` value, we wouldn’t be able to with
 a struct. Enums handle this case with ease:
 
-```aquascope,interpreter
-#fn main() {
-enum IpAddr {
-    V4(u8, u8, u8, u8),
-    V6(String),
-}
-
-let home = IpAddr::V4(127, 0, 0, 1);
-
-let loopback = IpAddr::V6(String::from("::1"));`[]`
-#}
-
+```rust
+{{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-03-variants-with-different-data/src/main.rs:here}}
 ```
 
 We’ve shown several different ways to define data structures to store version
@@ -238,7 +199,7 @@ languages.
 
 Programming language design is often thought of in terms of which features you
 include, but the features you exclude are important too. Rust doesn’t have the
-null feature that many other languages have. _Null_ is a value that means there
+null feature that many other languages have. *Null* is a value that means there
 is no value there. In languages with null, variables can always be in one of
 two states: null or not-null.
 
@@ -288,13 +249,8 @@ concrete type that gets used in place of `T` makes the overall `Option<T>` type
 a different type. Here are some examples of using `Option` values to hold
 number types and string types:
 
-```aquascope,interpreter
-#fn main() {
-let some_number = Some(5);
-let some_char = Some('e');
-
-let absent_number: Option<i32> = None;`[]`
-#}
+```rust
+{{#rustdoc_include ../listings/ch06-enums-and-pattern-matching/no-listing-06-option-examples/src/main.rs:here}}
 ```
 
 The type of `some_number` is `Option<i32>`. The type of `some_char` is
@@ -343,7 +299,7 @@ more confident in your code. In order to have a value that can possibly be
 null, you must explicitly opt in by making the type of that value `Option<T>`.
 Then, when you use that value, you are required to explicitly handle the case
 when the value is null. Everywhere that a value has a type that isn’t an
-`Option<T>`, you _can_ safely assume that the value isn’t null. This was a
+`Option<T>`, you *can* safely assume that the value isn’t null. This was a
 deliberate design decision for Rust to limit null’s pervasiveness and increase
 the safety of Rust code.
 
@@ -363,8 +319,6 @@ does just this when used with enums: it will run different code depending on
 which variant of the enum it has, and that code can use the data inside the
 matching value.
 
-{{#quiz ../quizzes/ch06-01-defining-an-enum.toml}}
-
-[IpAddr]: https://doc.rust-lang.org/std/net/enum.IpAddr.html
-[option]: https://doc.rust-lang.org/std/option/enum.Option.html
-[docs]: https://doc.rust-lang.org/std/option/enum.Option.html
+[IpAddr]: ../std/net/enum.IpAddr.html
+[option]: ../std/option/enum.Option.html
+[docs]: ../std/option/enum.Option.html

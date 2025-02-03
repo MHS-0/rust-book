@@ -1,342 +1,492 @@
 ## What Is Ownership?
 
-Ownership is a discipline for ensuring the **safety** of Rust programs. To understand ownership, we first need to understand what makes a Rust program safe (or unsafe).
+*Ownership* is a set of rules that govern how a Rust program manages memory.
+All programs have to manage the way they use a computer’s memory while running.
+Some languages have garbage collection that regularly looks for no-longer-used
+memory as the program runs; in other languages, the programmer must explicitly
+allocate and free the memory. Rust uses a third approach: memory is managed
+through a system of ownership with a set of rules that the compiler checks. If
+any of the rules are violated, the program won’t compile. None of the features
+of ownership will slow down your program while it’s running.
 
-### Safety is the Absence of Undefined Behavior
+Because ownership is a new concept for many programmers, it does take some time
+to get used to. The good news is that the more experienced you become with Rust
+and the rules of the ownership system, the easier you’ll find it to naturally
+develop code that is safe and efficient. Keep at it!
 
-Let's start with an example. This program is safe to execute:
+When you understand ownership, you’ll have a solid foundation for understanding
+the features that make Rust unique. In this chapter, you’ll learn ownership by
+working through some examples that focus on a very common data structure:
+strings.
+
+> ### The Stack and the Heap
+>
+> Many programming languages don’t require you to think about the stack and the
+> heap very often. But in a systems programming language like Rust, whether a
+> value is on the stack or the heap affects how the language behaves and why
+> you have to make certain decisions. Parts of ownership will be described in
+> relation to the stack and the heap later in this chapter, so here is a brief
+> explanation in preparation.
+>
+> Both the stack and the heap are parts of memory available to your code to use
+> at runtime, but they are structured in different ways. The stack stores
+> values in the order it gets them and removes the values in the opposite
+> order. This is referred to as *last in, first out*. Think of a stack of
+> plates: when you add more plates, you put them on top of the pile, and when
+> you need a plate, you take one off the top. Adding or removing plates from
+> the middle or bottom wouldn’t work as well! Adding data is called *pushing
+> onto the stack*, and removing data is called *popping off the stack*. All
+> data stored on the stack must have a known, fixed size. Data with an unknown
+> size at compile time or a size that might change must be stored on the heap
+> instead.
+>
+> The heap is less organized: when you put data on the heap, you request a
+> certain amount of space. The memory allocator finds an empty spot in the heap
+> that is big enough, marks it as being in use, and returns a *pointer*, which
+> is the address of that location. This process is called *allocating on the
+> heap* and is sometimes abbreviated as just *allocating* (pushing values onto
+> the stack is not considered allocating). Because the pointer to the heap is a
+> known, fixed size, you can store the pointer on the stack, but when you want
+> the actual data, you must follow the pointer. Think of being seated at a
+> restaurant. When you enter, you state the number of people in your group, and
+> the host finds an empty table that fits everyone and leads you there. If
+> someone in your group comes late, they can ask where you’ve been seated to
+> find you.
+>
+> Pushing to the stack is faster than allocating on the heap because the
+> allocator never has to search for a place to store new data; that location is
+> always at the top of the stack. Comparatively, allocating space on the heap
+> requires more work because the allocator must first find a big enough space
+> to hold the data and then perform bookkeeping to prepare for the next
+> allocation.
+>
+> Accessing data in the heap is slower than accessing data on the stack because
+> you have to follow a pointer to get there. Contemporary processors are faster
+> if they jump around less in memory. Continuing the analogy, consider a server
+> at a restaurant taking orders from many tables. It’s most efficient to get
+> all the orders at one table before moving on to the next table. Taking an
+> order from table A, then an order from table B, then one from A again, and
+> then one from B again would be a much slower process. By the same token, a
+> processor can do its job better if it works on data that’s close to other
+> data (as it is on the stack) rather than farther away (as it can be on the
+> heap).
+>
+> When your code calls a function, the values passed into the function
+> (including, potentially, pointers to data on the heap) and the function’s
+> local variables get pushed onto the stack. When the function is over, those
+> values get popped off the stack.
+>
+> Keeping track of what parts of code are using what data on the heap,
+> minimizing the amount of duplicate data on the heap, and cleaning up unused
+> data on the heap so you don’t run out of space are all problems that ownership
+> addresses. Once you understand ownership, you won’t need to think about the
+> stack and the heap very often, but knowing that the main purpose of ownership
+> is to manage heap data can help explain why it works the way it does.
+
+### Ownership Rules
+
+First, let’s take a look at the ownership rules. Keep these rules in mind as we
+work through the examples that illustrate them:
+
+* Each value in Rust has an *owner*.
+* There can only be one owner at a time.
+* When the owner goes out of scope, the value will be dropped.
+
+### Variable Scope
+
+Now that we’re past basic Rust syntax, we won’t include all the `fn main() {`
+code in examples, so if you’re following along, make sure to put the following
+examples inside a `main` function manually. As a result, our examples will be a
+bit more concise, letting us focus on the actual details rather than
+boilerplate code.
+
+As a first example of ownership, we’ll look at the *scope* of some variables. A
+scope is the range within a program for which an item is valid. Take the
+following variable:
 
 ```rust
-fn read(y: bool) {
-    if y {
-        println!("y is true!");
-    }
-}
-
-fn main() {
-    let x = true;
-    read(x);
-}
+let s = "hello";
 ```
 
-We can make this program unsafe to execute by moving the call to `read` before the definition of `x`:
+The variable `s` refers to a string literal, where the value of the string is
+hardcoded into the text of our program. The variable is valid from the point at
+which it’s declared until the end of the current *scope*. Listing 4-1 shows a
+program with comments annotating where the variable `s` would be valid.
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-01/src/main.rs:here}}
+```
+
+<span class="caption">Listing 4-1: A variable and the scope in which it is
+valid</span>
+
+In other words, there are two important points in time here:
+
+* When `s` comes *into* scope, it is valid.
+* It remains valid until it goes *out of* scope.
+
+At this point, the relationship between scopes and when variables are valid is
+similar to that in other programming languages. Now we’ll build on top of this
+understanding by introducing the `String` type.
+
+### The `String` Type
+
+To illustrate the rules of ownership, we need a data type that is more complex
+than those we covered in the [“Data Types”][data-types]<!-- ignore --> section
+of Chapter 3. The types covered previously are of a known size, can be stored
+on the stack and popped off the stack when their scope is over, and can be
+quickly and trivially copied to make a new, independent instance if another
+part of code needs to use the same value in a different scope. But we want to
+look at data that is stored on the heap and explore how Rust knows when to
+clean up that data, and the `String` type is a great example.
+
+We’ll concentrate on the parts of `String` that relate to ownership. These
+aspects also apply to other complex data types, whether they are provided by
+the standard library or created by you. We’ll discuss `String` in more depth in
+[Chapter 8][ch8]<!-- ignore -->.
+
+We’ve already seen string literals, where a string value is hardcoded into our
+program. String literals are convenient, but they aren’t suitable for every
+situation in which we may want to use text. One reason is that they’re
+immutable. Another is that not every string value can be known when we write
+our code: for example, what if we want to take user input and store it? For
+these situations, Rust has a second string type, `String`. This type manages
+data allocated on the heap and as such is able to store an amount of text that
+is unknown to us at compile time. You can create a `String` from a string
+literal using the `from` function, like so:
+
+```rust
+let s = String::from("hello");
+```
+
+The double colon `::` operator allows us to namespace this particular `from`
+function under the `String` type rather than using some sort of name like
+`string_from`. We’ll discuss this syntax more in the [“Method
+Syntax”][method-syntax]<!-- ignore --> section of Chapter 5, and when we talk
+about namespacing with modules in [“Paths for Referring to an Item in the
+Module Tree”][paths-module-tree]<!-- ignore --> in Chapter 7.
+
+This kind of string *can* be mutated:
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-01-can-mutate-string/src/main.rs:here}}
+```
+
+So, what’s the difference here? Why can `String` be mutated but literals
+cannot? The difference is in how these two types deal with memory.
+
+### Memory and Allocation
+
+In the case of a string literal, we know the contents at compile time, so the
+text is hardcoded directly into the final executable. This is why string
+literals are fast and efficient. But these properties only come from the string
+literal’s immutability. Unfortunately, we can’t put a blob of memory into the
+binary for each piece of text whose size is unknown at compile time and whose
+size might change while running the program.
+
+With the `String` type, in order to support a mutable, growable piece of text,
+we need to allocate an amount of memory on the heap, unknown at compile time,
+to hold the contents. This means:
+
+* The memory must be requested from the memory allocator at runtime.
+* We need a way of returning this memory to the allocator when we’re done with
+  our `String`.
+
+That first part is done by us: when we call `String::from`, its implementation
+requests the memory it needs. This is pretty much universal in programming
+languages.
+
+However, the second part is different. In languages with a *garbage collector
+(GC)*, the GC keeps track of and cleans up memory that isn’t being used
+anymore, and we don’t need to think about it. In most languages without a GC,
+it’s our responsibility to identify when memory is no longer being used and to
+call code to explicitly free it, just as we did to request it. Doing this
+correctly has historically been a difficult programming problem. If we forget,
+we’ll waste memory. If we do it too early, we’ll have an invalid variable. If
+we do it twice, that’s a bug too. We need to pair exactly one `allocate` with
+exactly one `free`.
+
+Rust takes a different path: the memory is automatically returned once the
+variable that owns it goes out of scope. Here’s a version of our scope example
+from Listing 4-1 using a `String` instead of a string literal:
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-02-string-scope/src/main.rs:here}}
+```
+
+There is a natural point at which we can return the memory our `String` needs
+to the allocator: when `s` goes out of scope. When a variable goes out of
+scope, Rust calls a special function for us. This function is called
+[`drop`][drop]<!-- ignore -->, and it’s where the author of `String` can put
+the code to return the memory. Rust calls `drop` automatically at the closing
+curly bracket.
+
+> Note: In C++, this pattern of deallocating resources at the end of an item’s
+> lifetime is sometimes called *Resource Acquisition Is Initialization (RAII)*.
+> The `drop` function in Rust will be familiar to you if you’ve used RAII
+> patterns.
+
+This pattern has a profound impact on the way Rust code is written. It may seem
+simple right now, but the behavior of code can be unexpected in more
+complicated situations when we want to have multiple variables use the data
+we’ve allocated on the heap. Let’s explore some of those situations now.
+
+<!-- Old heading. Do not remove or links may break. -->
+<a id="ways-variables-and-data-interact-move"></a>
+
+#### Variables and Data Interacting with Move
+
+Multiple variables can interact with the same data in different ways in Rust.
+Let’s look at an example using an integer in Listing 4-2.
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-02/src/main.rs:here}}
+```
+
+<span class="caption">Listing 4-2: Assigning the integer value of variable `x`
+to `y`</span>
+
+We can probably guess what this is doing: “bind the value `5` to `x`; then make
+a copy of the value in `x` and bind it to `y`.” We now have two variables, `x`
+and `y`, and both equal `5`. This is indeed what is happening, because integers
+are simple values with a known, fixed size, and these two `5` values are pushed
+onto the stack.
+
+Now let’s look at the `String` version:
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-03-string-move/src/main.rs:here}}
+```
+
+This looks very similar, so we might assume that the way it works would be the
+same: that is, the second line would make a copy of the value in `s1` and bind
+it to `s2`. But this isn’t quite what happens.
+
+Take a look at Figure 4-1 to see what is happening to `String` under the
+covers. A `String` is made up of three parts, shown on the left: a pointer to
+the memory that holds the contents of the string, a length, and a capacity.
+This group of data is stored on the stack. On the right is the memory on the
+heap that holds the contents.
+
+<img alt="Two tables: the first table contains the representation of s1 on the
+stack, consisting of its length (5), capacity (5), and a pointer to the first
+value in the second table. The second table contains the representation of the
+string data on the heap, byte by byte." src="img/trpl04-01.svg" class="center"
+style="width: 50%;" />
+
+<span class="caption">Figure 4-1: Representation in memory of a `String`
+holding the value `"hello"` bound to `s1`</span>
+
+The length is how much memory, in bytes, the contents of the `String` are
+currently using. The capacity is the total amount of memory, in bytes, that the
+`String` has received from the allocator. The difference between length and
+capacity matters, but not in this context, so for now, it’s fine to ignore the
+capacity.
+
+When we assign `s1` to `s2`, the `String` data is copied, meaning we copy the
+pointer, the length, and the capacity that are on the stack. We do not copy the
+data on the heap that the pointer refers to. In other words, the data
+representation in memory looks like Figure 4-2.
+
+<img alt="Three tables: tables s1 and s2 representing those strings on the
+stack, respectively, and both pointing to the same string data on the heap."
+src="img/trpl04-02.svg" class="center" style="width: 50%;" />
+
+<span class="caption">Figure 4-2: Representation in memory of the variable `s2`
+that has a copy of the pointer, length, and capacity of `s1`</span>
+
+The representation does *not* look like Figure 4-3, which is what memory would
+look like if Rust instead copied the heap data as well. If Rust did this, the
+operation `s2 = s1` could be very expensive in terms of runtime performance if
+the data on the heap were large.
+
+<img alt="Four tables: two tables representing the stack data for s1 and s2,
+and each points to its own copy of string data on the heap."
+src="img/trpl04-03.svg" class="center" style="width: 50%;" />
+
+<span class="caption">Figure 4-3: Another possibility for what `s2 = s1` might
+do if Rust copied the heap data as well</span>
+
+Earlier, we said that when a variable goes out of scope, Rust automatically
+calls the `drop` function and cleans up the heap memory for that variable. But
+Figure 4-2 shows both data pointers pointing to the same location. This is a
+problem: when `s2` and `s1` go out of scope, they will both try to free the
+same memory. This is known as a *double free* error and is one of the memory
+safety bugs we mentioned previously. Freeing memory twice can lead to memory
+corruption, which can potentially lead to security vulnerabilities.
+
+To ensure memory safety, after the line `let s2 = s1;`, Rust considers `s1` as
+no longer valid. Therefore, Rust doesn’t need to free anything when `s1` goes
+out of scope. Check out what happens when you try to use `s1` after `s2` is
+created; it won’t work:
 
 ```rust,ignore,does_not_compile
-fn read(y: bool) {
-    if y {
-        println!("y is true!");
-    }
-}
-
-fn main() {
-    read(x); // oh no! x isn't defined!
-    let x = true;
-}
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-04-cant-use-after-move/src/main.rs:here}}
 ```
 
-> *Note*: in this chapter, we will use many code examples that do not compile. Make sure to look for the question mark crab if you are not sure whether a program should compile or not.
+You’ll get an error like this because Rust prevents you from using the
+invalidated reference:
 
-This second program is unsafe because `read(x)` expects `x` to have a value of type `bool`, but `x` doesn't have a value yet.
-
-When a program like this is executed by an interpreter, then reading `x` before it's defined would raise an exception such as Python's [`NameError`] or Javascript's [`ReferenceError`]. But exceptions come at a cost. Each time an interpreted program reads a variable, then the interpreter must check whether that variable is defined.
-
-Rust's goal is to compile programs into efficient binaries that require as few runtime checks as possible. Therefore Rust does not check at *runtime* whether a variable is defined before being used. Instead, Rust checks at *compile-time*. If you try to compile the unsafe program, you will get this error:
-
-```text
-error[E0425]: cannot find value `x` in this scope
- --> src/main.rs:8:10
-  |
-8 |     read(x); // oh no! x isn't defined!
-  |          ^ not found in this scope
+```console
+{{#include ../listings/ch04-understanding-ownership/no-listing-04-cant-use-after-move/output.txt}}
 ```
 
-You probably have the intuition that it's good for Rust to ensure that variables are defined before they are used. But why? To justify the rule, we have to ask: **what would happen if Rust allowed a rejected program to compile?**
+If you’ve heard the terms *shallow copy* and *deep copy* while working with
+other languages, the concept of copying the pointer, length, and capacity
+without copying the data probably sounds like making a shallow copy. But
+because Rust also invalidates the first variable, instead of being called a
+shallow copy, it’s known as a *move*. In this example, we would say that `s1`
+was *moved* into `s2`. So, what actually happens is shown in Figure 4-4.
 
-Let's first consider how the safe program compiles and executes. On a computer with a processor using an [x86](https://en.wikipedia.org/wiki/X86) architecture, Rust generates the following assembly code for the `main` function in the safe program ([see the full assembly code here](https://rust.godbolt.org/z/xnT1fzsqv)):
+<img alt="Three tables: tables s1 and s2 representing those strings on the
+stack, respectively, and both pointing to the same string data on the heap.
+Table s1 is grayed out be-cause s1 is no longer valid; only s2 can be used to
+access the heap data." src="img/trpl04-04.svg" class="center" style="width:
+50%;" />
 
-```x86asm
-main:
-    ; ...
-    mov     edi, 1
-    call    read
-    ; ...
+<span class="caption">Figure 4-4: Representation in memory after `s1` has been
+invalidated</span>
+
+That solves our problem! With only `s2` valid, when it goes out of scope it
+alone will free the memory, and we’re done.
+
+In addition, there’s a design choice that’s implied by this: Rust will never
+automatically create “deep” copies of your data. Therefore, any *automatic*
+copying can be assumed to be inexpensive in terms of runtime performance.
+
+<!-- Old heading. Do not remove or links may break. -->
+<a id="ways-variables-and-data-interact-clone"></a>
+
+#### Variables and Data Interacting with Clone
+
+If we *do* want to deeply copy the heap data of the `String`, not just the
+stack data, we can use a common method called `clone`. We’ll discuss method
+syntax in Chapter 5, but because methods are a common feature in many
+programming languages, you’ve probably seen them before.
+
+Here’s an example of the `clone` method in action:
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-05-clone/src/main.rs:here}}
 ```
 
-> _Note_: if you aren't familiar with assembly code, that's ok! This section contains a few examples of assembly just to show you how Rust actually works under the hood. You don't generally need to know assembly to understand Rust.
+This works just fine and explicitly produces the behavior shown in Figure 4-3,
+where the heap data *does* get copied.
 
-This assembly code will:
+When you see a call to `clone`, you know that some arbitrary code is being
+executed and that code may be expensive. It’s a visual indicator that something
+different is going on.
 
-- Move the number 1, representing `true`, into a "register" (a kind of assembly variable) called `edi`.
-- Call the `read` function, which expects its first argument `y` to be in the `edi` register.
+#### Stack-Only Data: Copy
 
-If the unsafe function was allowed to compile, its assembly might look like this:
+There’s another wrinkle we haven’t talked about yet. This code using
+integers—part of which was shown in Listing 4-2—works and is valid:
 
-```x86asm
-main:
-    ; ...
-    call    read
-    mov     edi, 1    ; mov is after call
-    ; ...
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/no-listing-06-copy/src/main.rs:here}}
 ```
 
-This program is unsafe because `read` will expect `edi` to be a boolean, which is either the number `0` or `1`. But `edi` could be anything: `2`, `100`, `0x1337BEEF`. When `read` wants to use its argument `y` for any purpose, it will immediately cause _**UNDEFINED BEHAVIOR!**_
+But this code seems to contradict what we just learned: we don’t have a call to
+`clone`, but `x` is still valid and wasn’t moved into `y`.
 
-Rust doesn't specify what happens if you try to run `if y { .. }` when `y` isn't `true` or `false`. That *behavior*, or what happens after executing the instruction, is *undefined*. Something will happen, for example:
+The reason is that types such as integers that have a known size at compile
+time are stored entirely on the stack, so copies of the actual values are quick
+to make. That means there’s no reason we would want to prevent `x` from being
+valid after we create the variable `y`. In other words, there’s no difference
+between deep and shallow copying here, so calling `clone` wouldn’t do anything
+different from the usual shallow copying, and we can leave it out.
 
-- The code executes without crashing, and no one notices a problem.
-- The code immediately crashes due to a [segmentation fault](https://en.wikipedia.org/wiki/Segmentation_fault) or another kind of operating system error.
-- The code executes without crashing, until a malicious actor creates the right input to delete your production database, overwrite your backups, and steal your lunch money.
+Rust has a special annotation called the `Copy` trait that we can place on
+types that are stored on the stack, as integers are (we’ll talk more about
+traits in [Chapter 10][traits]<!-- ignore -->). If a type implements the `Copy`
+trait, variables that use it do not move, but rather are trivially copied,
+making them still valid after assignment to another variable.
 
-**A foundational goal of Rust is to ensure that your programs never have undefined behavior.** That is the meaning of "safety." Undefined behavior is especially dangerous for low-level programs with direct access to memory. About [70% of reported security vulnerabilities](https://msrc.microsoft.com/blog/2019/07/a-proactive-approach-to-more-secure-code/) in low-level systems are caused by memory corruption, which is one form of undefined behavior.
+Rust won’t let us annotate a type with `Copy` if the type, or any of its parts,
+has implemented the `Drop` trait. If the type needs something special to happen
+when the value goes out of scope and we add the `Copy` annotation to that type,
+we’ll get a compile-time error. To learn about how to add the `Copy` annotation
+to your type to implement the trait, see [“Derivable
+Traits”][derivable-traits]<!-- ignore --> in Appendix C.
 
-A secondary goal of Rust is to prevent undefined behavior at _compile-time_ instead of _run-time_. This goal has two motivations:
+So, what types implement the `Copy` trait? You can check the documentation for
+the given type to be sure, but as a general rule, any group of simple scalar
+values can implement `Copy`, and nothing that requires allocation or is some
+form of resource can implement `Copy`. Here are some of the types that
+implement `Copy`:
 
-1. Catching bugs at compile-time means avoiding those bugs in production, improving the reliability of your software.
-2. Catching bugs at compile-time means fewer runtime checks for those bugs, improving the performance of your software.
+* All the integer types, such as `u32`.
+* The Boolean type, `bool`, with values `true` and `false`.
+* All the floating-point types, such as `f64`.
+* The character type, `char`.
+* Tuples, if they only contain types that also implement `Copy`. For example,
+  `(i32, i32)` implements `Copy`, but `(i32, String)` does not.
 
-Rust cannot prevent all bugs. If an application exposes a public and unauthenticated `/delete-production-database` endpoint, then a malicious actor doesn't need a suspicious if-statement to delete the database. But Rust's protections are still likely to make programs safer versus using a language with fewer protections, e.g. as found by [Google's Android team](https://security.googleblog.com/2022/12/memory-safe-languages-in-android-13.html).
+### Ownership and Functions
 
-### Ownership as a Discipline for Memory Safety
+The mechanics of passing a value to a function are similar to those when
+assigning a value to a variable. Passing a variable to a function will move or
+copy, just as assignment does. Listing 4-3 has an example with some annotations
+showing where variables go into and out of scope.
 
-Since safety is the absence of undefined behavior, and since ownership is about safety, then we need to understand ownership in terms of the undefined behaviors it prevents. The Rust Reference maintains a large list of ["Behavior considered undefined"](https://doc.rust-lang.org/reference/behavior-considered-undefined.html). For now, we will focus on one category: operations on memory.
+<span class="filename">Filename: src/main.rs</span>
 
-Memory is the space where data is stored during the execution of a program. There are many ways to think about memory:
-
-- If you are unfamiliar with systems programming, you might think of memory at a high level like "memory is the RAM in my computer" or "memory is the thing that runs out if I load too much data".
-- If you are familiar with systems programming, you might think of memory at a low level like "memory is an array of bytes" or "memory is the pointers I get back from `malloc`".
-
-Both of these memory models are _valid_, but they are not _useful_ ways to think about how Rust works. The high-level model is too abstract to explain how Rust works. You will need to understand the concept of a pointer, for instance. The low-level model is too concrete to explain how Rust works. Rust does not allow you to interpret memory as an array of bytes, for instance.
-
-Rust provides a particular way to think about memory. Ownership is a discipline for safely using memory within that way of thinking. The rest of this chapter will explain the Rust model of memory.
-
-### Variables Live in the Stack
-
-Here's a program like the one you saw in Section 3.3 that defines a number `n` and calls a function `plus_one` on `n`. Beneath the program is a new kind of diagram. This diagram visualizes the contents of memory during the program's execution at the three marked points.
-
-```aquascope,interpreter,horizontal
-fn main() {
-    let n = 5;`[]`
-    let y = plus_one(n);`[]`
-    println!("The value of y is: {y}");
-}
-
-fn plus_one(x: i32) -> i32 {
-    `[]`x + 1
-}
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-03/src/main.rs}}
 ```
 
-Variables live in **frames**. A frame is a mapping from variables to values within a single scope, such as a function. For example:
+<span class="caption">Listing 4-3: Functions with ownership and scope
+annotated</span>
 
-- The frame for `main` at location L1 holds `n = 5`.
-- The frame for `plus_one` at L2 holds `x = 5`.
-- The frame for `main` at location L3 holds `n = 5; y = 6`.
+If we tried to use `s` after the call to `takes_ownership`, Rust would throw a
+compile-time error. These static checks protect us from mistakes. Try adding
+code to `main` that uses `s` and `x` to see where you can use them and where
+the ownership rules prevent you from doing so.
 
-Frames are organized into a **stack** of currently-called-functions. For example, at L2 the frame for `main` sits above the frame for the called function `plus_one`. After a function returns, Rust deallocates the function's frame. (Deallocation is also called **freeing** or **dropping**, and we use those terms interchangeably.) This sequence of frames is called a stack because the most recent frame added is always the next frame freed.
+### Return Values and Scope
 
-> _Note:_ this memory model does not fully describe how Rust actually works! As we saw earlier with the assembly code, the Rust compiler might put `n` or `x` into a register rather than a stack frame. But that distinction is an implementation detail. It shouldn't change your understanding of safety in Rust, so we can focus on the simpler case of frame-only variables.
+Returning values can also transfer ownership. Listing 4-4 shows an example of a
+function that returns some value, with similar annotations as those in Listing
+4-3.
 
-When an expression reads a variable, the variable's value is copied from its slot in the stack frame. For example, if we run this program:
+<span class="filename">Filename: src/main.rs</span>
 
-```aquascope,interpreter,horizontal
-#fn main() {
-let a = 5;`[]`
-let mut b = a;`[]`
-b += 1;`[]`
-#}
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-04/src/main.rs}}
 ```
 
-The value of `a` is copied into `b`, and `a` is left unchanged, even after changing `b`.
+<span class="caption">Listing 4-4: Transferring ownership of return
+values</span>
 
-### Boxes Live in the Heap
+The ownership of a variable follows the same pattern every time: assigning a
+value to another variable moves it. When a variable that includes data on the
+heap goes out of scope, the value will be cleaned up by `drop` unless ownership
+of the data has been moved to another variable.
 
-However, copying data can take up a lot of memory. For example, here's a slightly different program. This program copies an array with 1 million elements:
+While this works, taking ownership and then returning ownership with every
+function is a bit tedious. What if we want to let a function use a value but
+not take ownership? It’s quite annoying that anything we pass in also needs to
+be passed back if we want to use it again, in addition to any data resulting
+from the body of the function that we might want to return as well.
 
-```aquascope,interpreter
-#fn main() {
-let a = [0; 1_000_000];`[]`
-let b = a;`[]`
-#}
+Rust does let us return multiple values using a tuple, as shown in Listing 4-5.
+
+<span class="filename">Filename: src/main.rs</span>
+
+```rust
+{{#rustdoc_include ../listings/ch04-understanding-ownership/listing-04-05/src/main.rs}}
 ```
 
-Observe that copying `a` into `b` causes the `main` frame to contain 2 million elements. 
+<span class="caption">Listing 4-5: Returning ownership of parameters</span>
 
-To transfer access to data without copying it, Rust uses **pointers**. A pointer is a value that describes a location in memory. The value that a pointer points-to is called its **pointee.** One common way to make a pointer is to allocate memory in the **heap**.  The heap is a separate region of memory where data can live indefinitely. Heap data is not tied to a specific stack frame. Rust provides a construct called [`Box`](https://doc.rust-lang.org/std/boxed/index.html) for putting data on the heap. For example, we can wrap the million-element array in `Box::new` like this:
+But this is too much ceremony and a lot of work for a concept that should be
+common. Luckily for us, Rust has a feature for using a value without
+transferring ownership, called *references*.
 
-```aquascope,interpreter
-#fn main() {
-let a = Box::new([0; 1_000_000]);`[]`
-let b = a;`[]`
-#}
-```
-
-Observe that now, there is only ever a single array at a time. At L1, the value of `a` is a pointer (represented by dot with an arrow) to the array inside the heap. The statement `let b = a` copies the pointer from `a` into `b`, but the pointed-to data is not copied. Note that `a` is now grayed out because it has been *moved* &mdash; we will see what that means in a moment.
-
-{{#quiz ../quizzes/ch04-01-ownership-sec1-stackheap.toml}}
-
-### Rust Does Not Permit Manual Memory Management
-
-Memory management is the process of allocating memory and deallocating memory. In other words, it's the process of finding unused memory and later returning that memory when it is no longer used. Stack frames are automatically managed by Rust. When a function is called, Rust allocates a stack frame for the called function. When the call ends, Rust deallocates the stack frame.
-
-As we saw above, heap data is allocated when calling `Box::new(..)`. But when is heap data deallocated? Imagine that Rust had a `free()` function that frees a heap allocation. Imagine that Rust let a programmer call `free` whenever they wanted. This kind of "manual" memory management easily leads to bugs. For example, we could read a pointer to freed memory:
-
-```aquascope,interpreter,shouldFail
-#fn free<T>(_t: T) {}
-#fn main() {
-let b = Box::new([0; 100]);`[]`
-free(b);`[]`
-assert!(b[0] == 0);`[]`
-#}
-```
-
-> *Note:* you may wonder how we are executing this Rust program that doesn't compile. We use [special tools](https://github.com/cognitive-engineering-lab/aquascope) to simulate Rust as if the borrow checker were disabled, for educational purposes. That way we can answer what-if questions, like: what if Rust let this unsafe program compile?
-
-Here, we allocate an array on the heap. Then we call `free(b)`, which deallocates the heap memory of `b`. Therefore the value of `b` is a pointer to invalid memory, which we represent as the "⦻" icon. No undefined behavior has happened yet! The program is still safe at L2. It's not necessarily a problem to have an invalid pointer.
-
-The undefined behavior happens when we try to *use* the pointer by reading `b[0]`. That would attempt to access invalid memory, which could cause the program to crash. Or worse, it could not crash and return arbitrary data. Therefore this program is **unsafe**.
-
-Rust does not allow programs to manually deallocate memory. That policy avoids the kinds of undefined behaviors shown above.
-
-### A Box's Owner Manages Deallocation
-
-Instead, Rust _automatically_ frees a box's heap memory. Here is an _almost_ correct description of Rust's policy for freeing boxes:
-
-> **Box deallocation principle (almost correct):** If a variable is bound to a box, when Rust deallocates the variable's frame, then Rust deallocates the box's heap memory.
-
-For example, let's trace through a program that allocates and frees a box:
-
-```aquascope,interpreter,horizontal
-fn main() {
-    let a_num = 4;`[]`
-    make_and_drop();`[]`
-}
-
-fn make_and_drop() {
-    let a_box = Box::new(5);`[]`
-}
-```
-
-At L1, before calling `make_and_drop`, the state of memory is just the stack frame for `main`. Then at L2, while calling `make_and_drop`, `a_box` points to `5` on the heap. Once `make_and_drop` is finished, Rust deallocates its stack frame. `make_and_drop` contains the variable `a_box`, so Rust also deallocates the heap data in `a_box`. Therefore the heap is empty at L3.
-
-The box's heap memory has been successfully managed. But what if we abused this system? Returning to our earlier example, what happens when we bind two variables to a box?
-
-```rust,ignore
-#fn main() {
-let a = Box::new([0; 1_000_000]);
-let b = a;
-#}
-```
-
-The boxed array has now been bound to both `a` and `b`. By our "almost correct" principle, Rust would try to free the box's heap memory *twice* on behalf of both variables. That's undefined behavior too!
-
-To avoid this situation, we finally arrive at ownership. When `a` is bound to `Box::new([0; 1_000_000])`, we say that `a` **owns** the box. The statement `let b = a` **moves** ownership of the box from `a` to `b`. Given these concepts, Rust's policy for freeing boxes is more accurately described as:
-
-> **Box deallocation principle (fully correct):** If a variable owns a box, when Rust deallocates the variable's frame, then Rust deallocates the box's heap memory.
-
-In the example above, `b` owns the boxed array. Therefore when the scope ends, Rust deallocates the box only once on behalf of `b`, not `a`.
-
-
-### Collections Use Boxes
-
-Boxes are used by Rust data structures[^boxed-data-structures] like [`Vec`](https://doc.rust-lang.org/std/vec/struct.Vec.html), [`String`](https://doc.rust-lang.org/std/string/struct.String.html), and [`HashMap`](https://doc.rust-lang.org/std/collections/struct.HashMap.html) to hold a variable number of elements. For example, here's a program that creates, moves, and mutates a string:
-
-```aquascope,interpreter,horizontal
-fn main() {
-    let first = String::from("Ferris");`[]`
-    let full = add_suffix(first);`[]`
-    println!("{full}");
-}
-
-fn add_suffix(mut name: String) -> String {
-    `[]`name.push_str(" Jr.");`[]`
-    name
-}
-```
-
-This program is more involved, so make sure you follow each step:
-
-1. At L1, the string "Ferris" has been allocated on the heap. It is owned by `first`.
-2. At L2, the function `add_suffix(first)` has been called. This moves ownership of the string from `first` to `name`. The string data is not copied, but the pointer to the data is copied.
-3. At L3, the function `name.push_str(" Jr.")` resizes the string's heap allocation. This does three things. First, it creates a new larger allocation. Second, it writes "Ferris Jr." into the new allocation. Third, it frees the original heap memory. `first` now points to deallocated memory.
-4. At L4, the frame for `add_suffix` is gone. This function returned `name`, transferring ownership of the string to `full`.
-
-
-### Variables Cannot Be Used After Being Moved
-
-The string program helps illustrate a key safety principle for ownership. Imagine that `first` were used in `main` after calling `add_suffix`. We can simulate such a program and see the undefined behavior that results:
-
-```aquascope,interpreter,shouldFail
-fn main() {
-    let first = String::from("Ferris");
-    let full = add_suffix(first);
-    println!("{full}, originally {first}");`[]` // first is now used here
-}
-
-fn add_suffix(mut name: String) -> String {
-    name.push_str(" Jr.");
-    name
-}
-```
-
-`first` points to deallocated memory after calling `add_suffix`. Reading `first` in `println!` would therefore be a violation of memory safety (undefined behavior). Remember: it's not a problem that `first` points to deallocated memory. It's a problem that we tried to *use* `first` after it became invalid.
-
-Thankfully, Rust will refuse to compile this program, giving the following error:
-
-```text
-error[E0382]: borrow of moved value: `first`
- --> test.rs:4:35
-  |
-2 |     let first = String::from("Ferris");
-  |         ----- move occurs because `first` has type `String`, which does not implement the `Copy` trait
-3 |     let full = add_suffix(first);
-  |                           ----- value moved here
-4 |     println!("{full}, originally {first}"); // first is now used here
-  |                                   ^^^^^ value borrowed here after move
-```
-
-Let's walk through the steps of this error. Rust says that `first` is moved when we called `add_suffix(first)` on line 3. The error clarifies that `first` is moved because it has type `String`, which does not implement `Copy`. We will discuss `Copy` soon &mdash; in brief, you would not get this error if you used an `i32` instead of `String`. Finally, the error says that we use `first` after being moved (it's "borrowed", which we discuss next section).
-
-So if you move a variable, Rust will stop you from using that variable later. More generally, the compiler will enforce this principle:
-
-> **Moved heap data principle:** if a variable `x` moves ownership of heap data to another variable `y`, then `x` cannot be used after the move.
-
-Now you should start to see the relationship between ownership, moves, and safety. Moving ownership of heap data avoids undefined behavior from reading deallocated memory.
-
-### Cloning Avoids Moves
-
-One way to avoid moving data is to *clone* it using the `.clone()` method. For example, we can fix the safety issue in the previous program with a clone:
-
-```aquascope,interpreter
-fn main() {
-    let first = String::from("Ferris");
-    let first_clone = first.clone();`[]`
-    let full = add_suffix(first_clone);`[]`
-    println!("{full}, originally {first}");
-}
-
-fn add_suffix(mut name: String) -> String {
-    name.push_str(" Jr.");
-    name
-}
-```
-
-Observe that at L1, `first_clone` did not "shallow" copy the pointer in `first`, but instead "deep" copied the string data into a new heap allocation. Therefore at L2, while `first_clone` has been moved and invalidated by `add_suffix`, the original `first` variable is unchanged. It is safe to continue using `first`.
-
-{{#quiz ../quizzes/ch04-01-ownership-sec2-moves.toml}}
-
-### Summary
-
-Ownership is primarily a discipline of heap management:[^pointer-management]
-
-- All heap data must be owned by exactly one variable.
-- Rust deallocates heap data once its owner goes out of scope.
-- Ownership can be transferred by moves, which happen on assignments and function calls.
-- Heap data can only be accessed through its current owner, not a previous owner.
-
-We have emphasized not just _how_ Rust's safeguards work, but _why_ they avoid undefined behavior. When you get an error message from the Rust compiler, it's easy to get frustrated if you don't understand why Rust is complaining. These conceptual foundations should help you with interpreting Rust's error messages.  They should also help you design more Rustic APIs.
-
-[^boxed-data-structures]: These data structures don't use the literal `Box` type. For example, `String` is implemented with `Vec`, and `Vec` is implemented with [`RawVec`](https://doc.rust-lang.org/nomicon/vec/vec-raw.html) rather than `Box`. But types like `RawVec` are still box-like: they own memory in the heap.
-
-[^pointer-management]: In another sense, ownership is a discipline of *pointer* management. But we haven't described yet about how to create pointers to anywhere other than the heap. We'll get there in the next section.
-
-[`NameError`]: https://docs.python.org/3/library/exceptions.html#NameError
-[`ReferenceError`]: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/ReferenceError
+[data-types]: ch03-02-data-types.html#data-types
+[ch8]: ch08-02-strings.html
+[traits]: ch10-02-traits.html
+[derivable-traits]: appendix-03-derivable-traits.html
+[method-syntax]: ch05-03-method-syntax.html#method-syntax
+[paths-module-tree]: ch07-03-paths-for-referring-to-an-item-in-the-module-tree.html
+[drop]: ../std/ops/trait.Drop.html#tymethod.drop

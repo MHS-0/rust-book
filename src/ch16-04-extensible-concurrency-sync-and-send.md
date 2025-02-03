@@ -38,18 +38,13 @@ The `Sync` marker trait indicates that it is safe for the type implementing
 can be sent safely to another thread. Similar to `Send`, primitive types are
 `Sync`, and types composed entirely of types that are `Sync` are also `Sync`.
 
-<!-- BEGIN INTERVENTION: 43081862-aac8-4e18-9c55-1107ea4c7cc1 -->
-
-`Sync` is the most similar concept in Rust to the colloquial meaning of the phrase "thread-safe", i.e. that a particular piece of data can be safely used by multiple concurrent threads. The reason for having separate `Send` and `Sync` traits is that a type can sometimes be one, or both, or neither. For example:
-*  The smart pointer `Rc<T>` is also neither `Send` nor `Sync`, for reasons described above.
-* The `RefCell<T>` type (which we talked about in Chapter 15) and the
-family of related `Cell<T>` types are `Send` (if `T: Send`), but they are not `Sync`. A `RefCell` can be sent across a thread boundary, but not accessed concurrently because the implementation of borrow checking that `RefCell<T>` does at runtime is not thread-safe. 
-* The smart pointer `Mutex<T>` is `Send` and `Sync`, and can be used to share access with multiple threads as you saw in the [“Sharing a `Mutex<T>` Between Multiple Threads”][sharing-a-mutext-between-multiple-threads]<!-- ignore --> section.
-* The type `MutexGuard<'a, T>` that is returned by `Mutex::lock` is `Sync` (if `T: Sync`) but not `Send`. It is specifically not `Send` because [some platforms mandate that mutexes are unlocked by the same thread that locked them][mutex-guards-are-not-send].
-
-<!-- END INTERVENTION: 43081862-aac8-4e18-9c55-1107ea4c7cc1 -->
-
-
+The smart pointer `Rc<T>` is also not `Sync` for the same reasons that it’s not
+`Send`. The `RefCell<T>` type (which we talked about in Chapter 15) and the
+family of related `Cell<T>` types are not `Sync`. The implementation of borrow
+checking that `RefCell<T>` does at runtime is not thread-safe. The smart
+pointer `Mutex<T>` is `Sync` and can be used to share access with multiple
+threads as you saw in the [“Sharing a `Mutex<T>` Between Multiple
+Threads”][sharing-a-mutext-between-multiple-threads]<!-- ignore --> section.
 
 ### Implementing `Send` and `Sync` Manually Is Unsafe
 
@@ -67,10 +62,9 @@ uphold them.
 
 ## Summary
 
-This isn’t the last you’ll see of concurrency in this book: the whole next
-chapter focuses on async programming, and the project in Chapter 20 will use the
-concepts in this chapter in a more realistic situation than the smaller examples
-discussed here.
+This isn’t the last you’ll see of concurrency in this book: the project in
+Chapter 20 will use the concepts in this chapter in a more realistic situation
+than the smaller examples discussed here.
 
 As mentioned earlier, because very little of how Rust handles concurrency is
 part of the language, many concurrency solutions are implemented as crates.
@@ -87,9 +81,10 @@ run on multiple threads without the kinds of hard-to-track-down bugs common in
 other languages. Concurrent programming is no longer a concept to be afraid of:
 go forth and make your programs concurrent, fearlessly!
 
-{{#quiz ../quizzes/ch16-04-extensible-concurrency-send-and-sync.toml}}
+Next, we’ll talk about idiomatic ways to model problems and structure solutions
+as your Rust programs get bigger. In addition, we’ll discuss how Rust’s idioms
+relate to those you might be familiar with from object-oriented programming.
 
 [sharing-a-mutext-between-multiple-threads]:
 ch16-03-shared-state.html#sharing-a-mutext-between-multiple-threads
-[nomicon]: https://doc.rust-lang.org/nomicon/index.html
-[mutex-guards-are-not-send]: https://github.com/rust-lang/rust/issues/23465#issuecomment-82730326
+[nomicon]: ../nomicon/index.html

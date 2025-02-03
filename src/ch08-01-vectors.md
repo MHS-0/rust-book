@@ -65,7 +65,7 @@ we don’t need the `Vec<i32>` annotation.
 
 ### Reading Elements of Vectors
 
-There are two ways to reference a value stored in a vector: via indexing or by
+There are two ways to reference a value stored in a vector: via indexing or
 using the `get` method. In the following examples, we’ve annotated the types of
 the values that are returned from these functions for extra clarity.
 
@@ -76,8 +76,8 @@ syntax and the `get` method.
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-04/src/main.rs:here}}
 ```
 
-<span class="caption">Listing 8-4: Using indexing syntax and using the `get`
-method to access an item in a vector</span>
+<span class="caption">Listing 8-4: Using indexing syntax or the `get` method to
+access an item in a vector</span>
 
 Note a few details here. We use the index value of `2` to get the third element
 because vectors are indexed by number, starting at zero. Using `&` and `[]`
@@ -85,11 +85,11 @@ gives us a reference to the element at the index value. When we use the `get`
 method with the index passed as an argument, we get an `Option<&T>` that we can
 use with `match`.
 
-Rust provides these two ways to reference an element so you can choose how the
-program behaves when you try to use an index value outside the range of
-existing elements. As an example, let’s see what happens when we have a vector
-of five elements and then we try to access an element at index 100 with each
-technique, as shown in Listing 8-5.
+The reason Rust provides these two ways to reference an element is so you can
+choose how the program behaves when you try to use an index value outside the
+range of existing elements. As an example, let’s see what happens when we have
+a vector of five elements and then we try to access an element at index 100
+with each technique, as shown in Listing 8-5.
 
 ```rust,should_panic,panics
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-05/src/main.rs:here}}
@@ -121,7 +121,8 @@ rule that states you can’t have mutable and immutable references in the same
 scope. That rule applies in Listing 8-6, where we hold an immutable reference
 to the first element in a vector and try to add an element to the end. This
 program won’t work if we also try to refer to that element later in the
-function.
+function:
+
 
 ```rust,ignore,does_not_compile
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-06/src/main.rs:here}}
@@ -131,6 +132,7 @@ function.
 while holding a reference to an item</span>
 
 Compiling this code will result in this error:
+
 
 ```console
 {{#include ../listings/ch08-common-collections/listing-08-06/output.txt}}
@@ -149,9 +151,8 @@ ending up in that situation.
 > Note: For more on the implementation details of the `Vec<T>` type, see [“The
 > Rustonomicon”][nomicon].
 
-### Iterating Over the Values in a Vector
+### Iterating over the Values in a Vector
 
-<!-- BEGIN INTERVENTION: e8da8773-8df2-4279-8c27-b7e9eda1dddd -->
 To access each element in a vector in turn, we would iterate through all of the
 elements rather than use indices to access one at a time. Listing 8-7 shows how
 to use a `for` loop to get immutable references to each element in a vector of
@@ -161,10 +162,8 @@ to use a `for` loop to get immutable references to each element in a vector of
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-07/src/main.rs:here}}
 ```
 
-<span class="caption">Listing 8-7: Accessing each element in a vector by
+<span class="caption">Listing 8-7: Printing each element in a vector by
 iterating over the elements using a `for` loop</span>
-
-To read the number that `n_ref` refers to, we have to use the `*` dereference operator to get to the value in `n_ref` before we can add 1 to it, as covered in ["Dereferencing a Pointer Accesses Its Data"][deref].
 
 We can also iterate over mutable references to each element in a mutable vector
 in order to make changes to all the elements. The `for` loop in Listing 8-8
@@ -177,98 +176,33 @@ will add `50` to each element.
 <span class="caption">Listing 8-8: Iterating over mutable references to
 elements in a vector</span>
 
-To change the value that the mutable reference refers to, we again use the `*` dereference operator to get to the value in `n_ref` before we can use the `+=` operator. 
-<!-- END INTERVENTION -->
+To change the value that the mutable reference refers to, we have to use the
+`*` dereference operator to get to the value in `i` before we can use the `+=`
+operator. We’ll talk more about the dereference operator in the [“Following the
+Pointer to the Value with the Dereference Operator”][deref]<!-- ignore -->
+section of Chapter 15.
 
-{{#quiz ../quizzes/ch08-01-vec-sec1.toml}}
-
-### Safely Using Iterators
-
-We will discuss more about how iterators work in Chapter 13.2 ["Processing a Series of Items with Iterators"](ch13-02-iterators.html).
-For now, one important detail is that iterators contain a pointer to data within the vector. We can see how
-iterators work by desugaring a for-loop into the corresponding method calls of [`Vec::iter`] and [`Iterator::next`]:
-
-```aquascope,interpreter,horizontal
-#fn main() {
-#use std::slice::Iter;  
-let mut v: Vec<i32>         = vec![1, 2];
-let mut iter: Iter<'_, i32> = v.iter();`[]`
-let n1: &i32                = iter.next().unwrap();`[]`
-let n2: &i32                = iter.next().unwrap();`[]`
-let end: Option<&i32>       = iter.next();`[]`
-#}
-```
-
-Observe that the iterator `iter` is a pointer that moves through each element of the vector. The `next` method advances
-the iterator and returns an optional reference to the previous element, either `Some` (which we unwrap) or `None` at the end of the vector.
-
-This detail is relevant to safely using vectors. For example, say we wanted to duplicate a vector in-place, such as `[1, 2]` becoming `[1, 2, 1, 2]`.
-A naive implementation might look like this, annotated with the permissions inferred by the compiler:
-
-```aquascope,permissions,stepper,boundaries,shouldFail
-fn dup_in_place(v: &mut Vec<i32>) {
-    for n_ref in v.iter() {`(focus,paths:*v)`
-        v.push(*n_ref);`{}`
-    }
-}
-```
-
-Notice that `v.iter()` removes the @Perm{write} permission from `*v`. Therefore the `v.push(..)` operation is missing the expected @Perm{write} permission. The Rust compiler will reject this program with a corresponding error message:
-
-```text
-error[E0502]: cannot borrow `*v` as mutable because it is also borrowed as immutable
- --> test.rs:3:9
-  |
-2 |     for n_ref in v.iter() {
-  |                  --------
-  |                  |
-  |                  immutable borrow occurs here
-  |                  immutable borrow later used here
-3 |         v.push(*n_ref);
-  |         ^^^^^^^^^^^^^^ mutable borrow occurs here
-```
-
-As we discussed in Chapter 4, the safety issue beneath this error is reading deallocated memory. As soon as `v.push(1)` happens, the vector will reallocate its contents and invalidate the iterator's pointer. So to use iterators safely, Rust does not allow you to add or remove elements from the vector during iteration.
-
-<!-- TODO: add loop support and make this diagram look reasonable -->
-<!-- ```aquascope,interpreter,shouldFail,horizontal
-fn dup_in_place(v: &mut Vec<i32>) {`[]`
-    for n_ref in v.iter() {
-        v.push(*n_ref);
-    }`[]`
-}
-fn main() {
-    let mut v = vec![1, 2, 3];
-    dup_in_place(&mut v);
-}
-``` -->
-
-One way to iterate over a vector without using a pointer is with a range, like we used for string slices in [Chapter 4.4](ch04-04-slices.html#range-syntax). For example, the range `0 .. v.len()` is an iterator over all indices of a vector `v`, as seen here:
-
-```aquascope,interpreter,horizontal
-#fn main() {
-#use std::ops::Range; 
-let mut v: Vec<i32>        = vec![1, 2];
-let mut iter: Range<usize> = 0 .. v.len();`[]`
-let i1: usize              = iter.next().unwrap();
-let n1: &i32               = &v[i1];`[]`
-#}
-```
+Iterating over a vector, whether immutably or mutably, is safe because of the
+borrow checker's rules. If we attempted to insert or remove items in the `for`
+loop bodies in Listing 8-7 and Listing 8-8, we would get a compiler error
+similar to the one we got with the code in Listing 8-6. The reference to the
+vector that the `for` loop holds prevents simultaneous modification of the
+whole vector.
 
 ### Using an Enum to Store Multiple Types
 
-Vectors can only store values that are of the same type. This can be
-inconvenient; there are definitely use cases for needing to store a list of
-items of different types. Fortunately, the variants of an enum are defined
-under the same enum type, so when we need one type to represent elements of
-different types, we can define and use an enum!
+Vectors can only store values that are the same type. This can be inconvenient;
+there are definitely use cases for needing to store a list of items of
+different types. Fortunately, the variants of an enum are defined under the
+same enum type, so when we need one type to represent elements of different
+types, we can define and use an enum!
 
 For example, say we want to get values from a row in a spreadsheet in which
 some of the columns in the row contain integers, some floating-point numbers,
 and some strings. We can define an enum whose variants will hold the different
 value types, and all the enum variants will be considered the same type: that
 of the enum. Then we can create a vector to hold that enum and so, ultimately,
-hold different types. We’ve demonstrated this in Listing 8-9.
+holds different types. We’ve demonstrated this in Listing 8-9.
 
 ```rust
 {{#rustdoc_include ../listings/ch08-common-collections/listing-08-09/src/main.rs:here}}
@@ -290,7 +224,7 @@ store in a vector, the enum technique won’t work. Instead, you can use a trait
 object, which we’ll cover in Chapter 17.
 
 Now that we’ve discussed some of the most common ways to use vectors, be sure
-to review [the API documentation][vec-api]<!-- ignore --> for all of the many
+to review [the API documentation][vec-api]<!-- ignore --> for all the many
 useful methods defined on `Vec<T>` by the standard library. For example, in
 addition to `push`, a `pop` method removes and returns the last element.
 
@@ -313,11 +247,7 @@ valid.
 
 Let’s move on to the next collection type: `String`!
 
-{{#quiz ../quizzes/ch08-01-vec-sec2.toml}}
-
 [data-types]: ch03-02-data-types.html#data-types
-[nomicon]: https://doc.rust-lang.org/nomicon/vec/vec.html
-[vec-api]: https://doc.rust-lang.org/std/vec/struct.Vec.html
-[deref]: ch04-02-references-and-borrowing.html#dereferencing-a-pointer-accesses-its-data
-[`Vec::iter`]: https://doc.rust-lang.org/std/vec/struct.Vec.html#method.iter
-[`Iterator::next`]: https://doc.rust-lang.org/std/iter/trait.Iterator.html#tymethod.next
+[nomicon]: ../nomicon/vec/vec.html
+[vec-api]: ../std/vec/struct.Vec.html
+[deref]: ch15-02-deref.html#following-the-pointer-to-the-value-with-the-dereference-operator

@@ -98,8 +98,6 @@ run`:
 Because we called the function with `5` as the value for `value` and `'h'` as
 the value for `unit_label`, the program output contains those values.
 
-{{#quiz ../quizzes/ch03-03-functions-sec1-parameters.toml}}
-
 ### Statements and Expressions
 
 Function bodies are made up of a series of statements optionally ending in an
@@ -112,24 +110,22 @@ of functions.
 
 * **Statements** are instructions that perform some action and do not return
   a value.
-* **Expressions** evaluate to a resultant value.
+* **Expressions** evaluate to a resultant value. Let’s look at some examples.
 
-Let’s look at some examples.
 We’ve actually already used statements and expressions. Creating a variable and
 assigning a value to it with the `let` keyword is a statement. In Listing 3-1,
 `let y = 6;` is a statement.
 
-<Listing number="3-1" file-name="src/main.rs" caption="A `main` function declaration containing one statement">
+<span class="filename">Filename: src/main.rs</span>
 
 ```rust
 {{#rustdoc_include ../listings/ch03-common-programming-concepts/listing-03-01/src/main.rs}}
 ```
 
-</Listing>
+<span class="caption">Listing 3-1: A `main` function declaration containing one statement</span>
 
 Function definitions are also statements; the entire preceding example is a
-statement in itself. (As we will see below, *calling* a function is not a
-statement.)
+statement in itself.
 
 Statements do not return values. Therefore, you can’t assign a `let` statement
 to another variable, as the following code tries to do; you’ll get an error:
@@ -219,7 +215,7 @@ let x = 5;
 ```
 
 Second, the `five` function has no parameters and defines the type of the
-return value. The body of the function is a lonely `5` with no semicolon
+return value, but the body of the function is a lonely `5` with no semicolon
 because it’s an expression whose value we want to return.
 
 Let’s look at another example:
@@ -253,5 +249,3 @@ the unit type. Therefore, nothing is returned, which contradicts the function
 definition and results in an error. In this output, Rust provides a message to
 possibly help rectify this issue: it suggests removing the semicolon, which
 would fix the error.
-
-{{#quiz ../quizzes/ch03-03-functions-sec2-expressions.toml}}

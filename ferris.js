@@ -1,11 +1,4 @@
-// @ts-check
-
-/**
- * @typedef {{ attr: string, title: string }} FerrisType
- */
-
-/** @type {Array<FerrisType>} */
-const FERRIS_TYPES = [
+var ferrisTypes = [
   {
     attr: 'does_not_compile',
     title: 'This code does not compile!'
@@ -21,74 +14,46 @@ const FERRIS_TYPES = [
 ]
 
 document.addEventListener('DOMContentLoaded', () => {
-  for (let ferrisType of FERRIS_TYPES) {
+  for (var ferrisType of ferrisTypes) {
     attachFerrises(ferrisType)
   }
 })
 
-/**
- * @param {FerrisType} type
- */
 function attachFerrises(type) {
-  let elements = document.getElementsByClassName(type.attr)
+  var elements = document.getElementsByClassName(type.attr)
 
-  for (let codeBlock of elements) {
-    // Skip SVG etc.: in principle, these should never be attached to those, but
-    // this means if someone happens to have a browser extension which *is*
-    // attaching them, it will not break the code.
-    if (!(codeBlock instanceof HTMLElement)) {
-      continue
+  for (var codeBlock of elements) {
+    var lines = codeBlock.innerText.replace(/\n$/, '').split(/\n/).length
+    var size = 'large'
+    if (lines < 4) {
+      size = 'small'
     }
 
-    let lines = codeBlock.innerText.replace(/\n$/, '').split(/\n/).length
-
-    /** @type {'small' | 'large'} */
-    let size = lines < 4 ? 'small' : 'large'
-
-    let container = prepareFerrisContainer(codeBlock, size == 'small')
-    if (!container) {
-      continue
-    }
-
+    var container = prepareFerrisContainer(codeBlock, size == 'small')
     container.appendChild(createFerris(type, size))
   }
 }
 
-/**
- * @param {HTMLElement} element - Code block element to attach a Ferris to.
- * @param {boolean} useButtons - Whether to attach to existing buttons.
- * @returns {Element | null} - The container element to use.
- */
 function prepareFerrisContainer(element, useButtons) {
-  let foundButtons = element.parentElement?.querySelector('.buttons')
+  var foundButtons = element.parentElement.querySelector('.buttons')
   if (useButtons && foundButtons) {
     return foundButtons
   }
 
-  let div = document.createElement('div')
+  var div = document.createElement('div')
   div.classList.add('ferris-container')
-
-  if (!element.parentElement) {
-    console.error(`Could not install Ferris on ${element}, which is missing a parent`);
-    return null;
-  }
 
   element.parentElement.insertBefore(div, element)
 
   return div
 }
 
-/**
- * @param {FerrisType} type
- * @param {'small' | 'large'} size
- * @returns {HTMLAnchorElement} - The generated anchor element.
- */
 function createFerris(type, size) {
-  let a = document.createElement('a')
+  var a = document.createElement('a')
   a.setAttribute('href', 'ch00-00-introduction.html#ferris')
   a.setAttribute('target', '_blank')
 
-  let img = document.createElement('img')
+  var img = document.createElement('img')
   img.setAttribute('src', 'img/ferris/' + type.attr + '.svg')
   img.setAttribute('title', type.title)
   img.classList.add('ferris')

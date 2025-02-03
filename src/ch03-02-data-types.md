@@ -200,8 +200,6 @@ intuition for what a “character” is may not match up with what a `char` is i
 Rust. We’ll discuss this topic in detail in [“Storing UTF-8 Encoded Text with
 Strings”][strings]<!-- ignore --> in Chapter 8.
 
-{{#quiz ../quizzes/ch03-02-data-types-sec1-scalar.toml}}
-
 ### Compound Types
 
 *Compound types* can group multiple values into one type. Rust has two
@@ -257,21 +255,6 @@ The tuple without any values has a special name, *unit*. This value and its
 corresponding type are both written `()` and represent an empty value or an
 empty return type. Expressions implicitly return the unit value if they don’t
 return any other value.
-
-Additionally, we can modify individual elements of a mutable tuple. For example:
-
-<span class="filename">Filename: src/main.rs</span>
-
-```rust
-fn main() {
-    let mut x: (i32, i32) = (1, 2);
-    x.0 = 0;
-    x.1 += 5;
-}
-```
-
-This program sets the first element to zero and adds five to the second element.
-The final value of `x` is `(0, 7)`.
 
 #### The Array Type
 
@@ -369,8 +352,7 @@ cargo run
 -->
 
 ```console
-thread 'main' panicked at src/main.rs:19:19:
-index out of bounds: the len is 5 but the index is 10
+thread 'main' panicked at 'index out of bounds: the len is 5 but the index is 10', src/main.rs:19:19
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 ```
 
@@ -390,8 +372,6 @@ kind of error by immediately exiting instead of allowing the memory access and
 continuing. Chapter 9 discusses more of Rust’s error handling and how you can
 write readable, safe code that neither panics nor allows invalid memory access.
 
-{{#quiz ../quizzes/ch03-02-data-types-sec2-compound.toml}}
-
 [comparing-the-guess-to-the-secret-number]:
 ch02-00-guessing-game-tutorial.html#comparing-the-guess-to-the-secret-number
 [twos-complement]: https://en.wikipedia.org/wiki/Two%27s_complement
@@ -400,5 +380,4 @@ ch02-00-guessing-game-tutorial.html#comparing-the-guess-to-the-secret-number
 [stack-and-heap]: ch04-01-what-is-ownership.html#the-stack-and-the-heap
 [vectors]: ch08-01-vectors.html
 [unrecoverable-errors-with-panic]: ch09-01-unrecoverable-errors-with-panic.html
-[wrapping]: https://doc.rust-lang.org/std/num/struct.Wrapping.html
 [appendix_b]: appendix-02-operators.md

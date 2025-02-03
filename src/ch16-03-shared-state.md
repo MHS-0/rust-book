@@ -128,7 +128,7 @@ We hinted that this example wouldn’t compile. Now let’s find out why!
 
 The error message states that the `counter` value was moved in the previous
 iteration of the loop. Rust is telling us that we can’t move the ownership
-of `counter` into multiple threads. Let’s fix the compiler error with a
+of lock `counter` into multiple threads. Let’s fix the compiler error with a
 multiple-ownership method we discussed in Chapter 15.
 
 #### Multiple Ownership with Multiple Threads
@@ -246,6 +246,4 @@ useful information.
 We’ll round out this chapter by talking about the `Send` and `Sync` traits and
 how we can use them with custom types.
 
-{{#quiz ../quizzes/ch16-03-shared-state.toml}}
-
-[atomic]: https://doc.rust-lang.org/std/sync/atomic/index.html
+[atomic]: ../std/sync/atomic/index.html

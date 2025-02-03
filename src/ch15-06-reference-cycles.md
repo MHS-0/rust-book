@@ -317,6 +317,4 @@ information.
 Next, we’ll talk about concurrency in Rust. You’ll even learn about a few new
 smart pointers.
 
-{{#quiz ../quizzes/ch15-06-reference-cycles.toml}}
-
-[nomicon]: https://doc.rust-lang.org/nomicon/index.html
+[nomicon]: ../nomicon/index.html

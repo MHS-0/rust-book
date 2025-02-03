@@ -13,7 +13,7 @@ parameters and return value. Doing so makes our code more flexible and provides
 more functionality to callers of our function while preventing code duplication.
 
 Continuing with our `largest` function, Listing 10-4 shows two functions that
-both find the largest value in a slice. We’ll then combine these into a single
+both find the largest value in a slice. We'll then combine these into a single
 function that uses generics.
 
 <span class="filename">Filename: src/main.rs</span>
@@ -23,7 +23,7 @@ function that uses generics.
 ```
 
 <span class="caption">Listing 10-4: Two functions that differ only in their
-names and in the types in their signatures</span>
+names and the types in their signatures</span>
 
 The `largest_i32` function is the one we extracted in Listing 10-3 that finds
 the largest `i32` in a slice. The `largest_char` function finds the largest
@@ -33,16 +33,16 @@ the duplication by introducing a generic type parameter in a single function.
 To parameterize the types in a new single function, we need to name the type
 parameter, just as we do for the value parameters to a function. You can use
 any identifier as a type parameter name. But we’ll use `T` because, by
-convention, type parameter names in Rust are short, often just one letter, and
-Rust’s type-naming convention is UpperCamelCase. Short for *type*, `T` is the
+convention, type parameter names in Rust are short, often just a letter, and
+Rust’s type-naming convention is UpperCamelCase. Short for “type,” `T` is the
 default choice of most Rust programmers.
 
 When we use a parameter in the body of the function, we have to declare the
 parameter name in the signature so the compiler knows what that name means.
 Similarly, when we use a type parameter name in a function signature, we have
 to declare the type parameter name before we use it. To define the generic
-`largest` function, we place type name declarations inside angle brackets,
-`<>`, between the name of the function and the parameter list, like this:
+`largest` function, place type name declarations inside angle brackets, `<>`,
+between the name of the function and the parameter list, like this:
 
 ```rust,ignore
 fn largest<T>(list: &[T]) -> &T {
@@ -65,7 +65,7 @@ compile yet, but we’ll fix it later in this chapter.
 ```
 
 <span class="caption">Listing 10-5: The `largest` function using generic type
-parameters; this doesn’t compile yet</span>
+parameters; this doesn’t yet compile</span>
 
 If we compile this code right now, we’ll get this error:
 
@@ -73,13 +73,16 @@ If we compile this code right now, we’ll get this error:
 {{#include ../listings/ch10-generic-types-traits-and-lifetimes/listing-10-05/output.txt}}
 ```
 
-<!-- BEGIN INTERVENTION: 0aad53ff-89d7-4d14-8e3d-c17809220252 -->
-The issue above is that when `largest` takes a slice `&[T]` as input, the function cannot assume *anything* about the type `T`. It could be `i32`, it could be `String`, it could be [`File`](https://doc.rust-lang.org/std/fs/struct.File.html). However, `largest` requires that `T` is something you can compare with `>` (i.e. that `T` implements `PartialOrd`, a trait which we will discuss in the next section). Some types like `i32` and `String` are comparable, but other types like `File` are not comparable.
-
-In a language like C++ with [templates](https://en.cppreference.com/w/cpp/language/templates), the compiler would not complain about the implementation of `largest`, but instead it would complain about trying to call `largest` on e.g. a file slice `&[File]`. Rust instead requires you to state the expected capabilities of generic types up front. If `T` needs to be comparable, then `largest` must say so. Therefore this compiler error says `largest` will not compile until `T` is restricted.
-
-Additionally, unlike languages like Java where all objects have a set of core methods like [`Object.toString()`](https://docs.oracle.com/javase/7/docs/api/java/lang/Object.html#toString()), there are no core methods in Rust. Without restrictions, a generic type `T` has no capabilities: it cannot be printed, cloned, or mutated (although it can be dropped).
-<!-- END INTERVENTION -->
+The help text mentions `std::cmp::PartialOrd`, which is a *trait*, and we’re
+going to talk about traits in the next section. For now, know that this error
+states that the body of `largest` won’t work for all possible types that `T`
+could be. Because we want to compare values of type `T` in the body, we can
+only use types whose values can be ordered. To enable comparisons, the standard
+library has the `std::cmp::PartialOrd` trait that you can implement on types
+(see Appendix C for more on this trait). By following the help text's
+suggestion, we restrict the types valid for `T` to only those that implement
+`PartialOrd` and this example will compile, because the standard library
+implements `PartialOrd` on both `i32` and `char`.
 
 ### In Struct Definitions
 
@@ -97,10 +100,9 @@ fields using the `<>` syntax. Listing 10-6 defines a `Point<T>` struct to hold
 values of type `T`</span>
 
 The syntax for using generics in struct definitions is similar to that used in
-function definitions. First we declare the name of the type parameter inside
-angle brackets just after the name of the struct. Then we use the generic
-type in the struct definition where we would otherwise specify concrete data
-types.
+function definitions. First, we declare the name of the type parameter inside
+angle brackets just after the name of the struct. Then we use the generic type
+in the struct definition where we would otherwise specify concrete data types.
 
 Note that because we’ve used only one generic type to define `Point<T>`, this
 definition says that the `Point<T>` struct is generic over some type `T`, and
@@ -117,9 +119,9 @@ Listing 10-7, our code won’t compile.
 <span class="caption">Listing 10-7: The fields `x` and `y` must be the same
 type because both have the same generic data type `T`.</span>
 
-In this example, when we assign the integer value `5` to `x`, we let the
-compiler know that the generic type `T` will be an integer for this instance of
-`Point<T>`. Then when we specify `4.0` for `y`, which we’ve defined to have the
+In this example, when we assign the integer value 5 to `x`, we let the compiler
+know that the generic type `T` will be an integer for this instance of
+`Point<T>`. Then when we specify 4.0 for `y`, which we’ve defined to have the
 same type as `x`, we’ll get a type mismatch error like this:
 
 ```console
@@ -142,7 +144,7 @@ that `x` and `y` can be values of different types</span>
 
 Now all the instances of `Point` shown are allowed! You can use as many generic
 type parameters in a definition as you want, but using more than a few makes
-your code hard to read. If you’re finding you need lots of generic types in
+your code hard to read. If you're finding you need lots of generic types in
 your code, it could indicate that your code needs restructuring into smaller
 pieces.
 
@@ -192,7 +194,7 @@ avoid duplication by using generic types instead.
 ### In Method Definitions
 
 We can implement methods on structs and enums (as we did in Chapter 5) and use
-generic types in their definitions too. Listing 10-9 shows the `Point<T>`
+generic types in their definitions, too. Listing 10-9 shows the `Point<T>`
 struct we defined in Listing 10-6 with a method named `x` implemented on it.
 
 <span class="filename">Filename: src/main.rs</span>
@@ -236,11 +238,7 @@ This code means the type `Point<f32>` will have a `distance_from_origin`
 method; other instances of `Point<T>` where `T` is not of type `f32` will not
 have this method defined. The method measures how far our point is from the
 point at coordinates (0.0, 0.0) and uses mathematical operations that are
-available only for floating-point types.
-
-<!-- BEGIN INTERVENTION: 694bb2d0-f2e6-4b0b-a3e7-2d9f9e8b3d09 -->
-You cannot simultaneously implement specific *and* generic methods of the same name this way. For example, if you implemented a general `distance_from_origin` for all types `T` and a specific `distance_from_origin` for `f32`, then the compiler will reject your program: Rust does not know which implementation to use when you call `Point<f32>::distance_from_origin`. More generally, Rust does not have inheritance-like mechanisms for specializing methods as you might find in an object-oriented language, with one exception (default trait methods) discussed in the next section.
-<!-- END INTERVENTION -->
+available only for floating point types.
 
 Generic type parameters in a struct definition aren’t always the same as those
 you use in that same struct’s method signatures. Listing 10-11 uses the generic
@@ -262,22 +260,22 @@ In `main`, we’ve defined a `Point` that has an `i32` for `x` (with value `5`)
 and an `f64` for `y` (with value `10.4`). The `p2` variable is a `Point` struct
 that has a string slice for `x` (with value `"Hello"`) and a `char` for `y`
 (with value `c`). Calling `mixup` on `p1` with the argument `p2` gives us `p3`,
-which will have an `i32` for `x` because `x` came from `p1`. The `p3` variable
-will have a `char` for `y` because `y` came from `p2`. The `println!` macro
+which will have an `i32` for `x`, because `x` came from `p1`. The `p3` variable
+will have a `char` for `y`, because `y` came from `p2`. The `println!` macro
 call will print `p3.x = 5, p3.y = c`.
 
 The purpose of this example is to demonstrate a situation in which some generic
 parameters are declared with `impl` and some are declared with the method
 definition. Here, the generic parameters `X1` and `Y1` are declared after
 `impl` because they go with the struct definition. The generic parameters `X2`
-and `Y2` are declared after `fn mixup` because they’re only relevant to the
+and `Y2` are declared after `fn mixup`, because they’re only relevant to the
 method.
 
 ### Performance of Code Using Generics
 
 You might be wondering whether there is a runtime cost when using generic type
-parameters. The good news is that using generic types won’t make your program
-run any slower than it would with concrete types.
+parameters. The good news is that using generic types won't make your program run
+any slower than it would with concrete types.
 
 Rust accomplishes this by performing monomorphization of the code using
 generics at compile time. *Monomorphization* is the process of turning generic
@@ -330,5 +328,3 @@ type in each instance, we pay no runtime cost for using generics. When the code
 runs, it performs just as it would if we had duplicated each definition by
 hand. The process of monomorphization makes Rust’s generics extremely efficient
 at runtime.
-
-{{#quiz ../quizzes/ch10-01-generics.toml}}

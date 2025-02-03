@@ -14,7 +14,7 @@ smart pointers to work in ways similar to references. Then we’ll look at
 Rust’s *deref coercion* feature and how it lets us work with either references
 or smart pointers.
 
-> Note: There’s one big difference between the `MyBox<T>` type we’re about to
+> Note: there’s one big difference between the `MyBox<T>` type we’re about to
 > build and the real `Box<T>`: our version will not store its data on the heap.
 > We are focusing this example on `Deref`, so where the data is actually stored
 > is less important than the pointer-like behavior.
@@ -294,8 +294,6 @@ initial immutable reference is the only immutable reference to that data, but
 the borrowing rules don’t guarantee that. Therefore, Rust can’t make the
 assumption that converting an immutable reference to a mutable reference is
 possible.
-
-{{#quiz ../quizzes/ch15-02-deref.toml}}
 
 [impl-trait]: ch10-02-traits.html#implementing-a-trait-on-a-type
 [tuple-structs]: ch05-01-defining-structs.html#using-tuple-structs-without-named-fields-to-create-different-types

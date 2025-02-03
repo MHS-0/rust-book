@@ -87,6 +87,51 @@ field as part of the type’s public API. We will discuss what public and privat
 are and how to designate a field or method as public or private in [Chapter
 7][public]<!-- ignore -->.
 
+> ### Where’s the `->` Operator?
+>
+> In C and C++, two different operators are used for calling methods: you use
+> `.` if you’re calling a method on the object directly and `->` if you’re
+> calling the method on a pointer to the object and need to dereference the
+> pointer first. In other words, if `object` is a pointer,
+> `object->something()` is similar to `(*object).something()`.
+>
+> Rust doesn’t have an equivalent to the `->` operator; instead, Rust has a
+> feature called *automatic referencing and dereferencing*. Calling methods is
+> one of the few places in Rust that has this behavior.
+>
+> Here’s how it works: when you call a method with `object.something()`, Rust
+> automatically adds in `&`, `&mut`, or `*` so `object` matches the signature of
+> the method. In other words, the following are the same:
+>
+> <!-- CAN'T EXTRACT SEE BUG https://github.com/rust-lang/mdBook/issues/1127 -->
+> ```rust
+> # #[derive(Debug,Copy,Clone)]
+> # struct Point {
+> #     x: f64,
+> #     y: f64,
+> # }
+> #
+> # impl Point {
+> #    fn distance(&self, other: &Point) -> f64 {
+> #        let x_squared = f64::powi(other.x - self.x, 2);
+> #        let y_squared = f64::powi(other.y - self.y, 2);
+> #
+> #        f64::sqrt(x_squared + y_squared)
+> #    }
+> # }
+> # let p1 = Point { x: 0.0, y: 0.0 };
+> # let p2 = Point { x: 5.0, y: 6.5 };
+> p1.distance(&p2);
+> (&p1).distance(&p2);
+> ```
+>
+> The first one looks much cleaner. This automatic referencing behavior works
+> because methods have a clear receiver—the type of `self`. Given the receiver
+> and name of a method, Rust can figure out definitively whether the method is
+> reading (`&self`), mutating (`&mut self`), or consuming (`self`). The fact
+> that Rust makes borrowing implicit for method receivers is a big part of
+> making ownership ergonomic in practice.
+
 ### Methods with More Parameters
 
 Let’s practice using methods by implementing a second method on the `Rectangle`
@@ -142,12 +187,11 @@ desired output. Methods can take multiple parameters that we add to the
 signature after the `self` parameter, and those parameters work just like
 parameters in functions.
 
-
 ### Associated Functions
 
 All functions defined within an `impl` block are called *associated functions*
 because they’re associated with the type named after the `impl`. We can define
-associated functions as functions that don’t have `self` as their first parameter (and thus
+associated functions that don’t have `self` as their first parameter (and thus
 are not methods) because they don’t need an instance of the type to work with.
 We’ve already used one function like this: the `String::from` function that’s
 defined on the `String` type.
@@ -193,456 +237,6 @@ There’s no reason to separate these methods into multiple `impl` blocks here,
 but this is valid syntax. We’ll see a case in which multiple `impl` blocks are
 useful in Chapter 10, where we discuss generic types and traits.
 
-### Method Calls are Syntactic Sugar for Function Calls
-
-Using the concepts we've discussed so far, we can now see how method calls are syntactic sugar for function calls. For example, let's say we have a rectangle struct with an `area` method and a `set_width` method:
-
-```rust,ignore
-# struct Rectangle {
-#     width: u32,
-#     height: u32,
-# }
-# 
-impl Rectangle {
-    fn area(&self) -> u32 {
-        self.width * self.height
-    }
-
-    fn set_width(&mut self, width: u32) {
-        self.width = width;
-    }
-}
-```
-
-And let's say we have a rectangle `r`. Then the method calls `r.area()` and `r.set_width(2)` are equivalent to this:
-
-```rust
-# struct Rectangle {
-#     width: u32,
-#     height: u32,
-# }
-# 
-# impl Rectangle {
-#     fn area(&self) -> u32 {
-#        self.width * self.height
-#      }
-# 
-#     fn set_width(&mut self, width: u32) {
-#         self.width = width;
-#     }
-# }
-# 
-# fn main() {
-    let mut r = Rectangle { 
-        width: 1,
-        height: 2
-    };
-    let area1 = r.area();
-    let area2 = Rectangle::area(&r);
-    assert_eq!(area1, area2);
-
-    r.set_width(2);
-    Rectangle::set_width(&mut r, 2);
-# }
-```
-
-The method call `r.area()` becomes `Rectangle::area(&r)`. The function name is the associated function `Rectangle::area`. The function argument is the `&self` parameter. Rust automatically inserts the borrowing operator `&`.
-
-> *Note:* if you are familiar with C or C++, you are used to two different syntaxes for method calls: `r.area()` and `r->area()`. Rust does not have an equivalent to the arrow operator `->`. Rust will automatically reference and dereference the method receiver when you use the dot operator.
-
-The method call `r.set_width(2)` similarly becomes `Rectangle::set_width(&mut r, 2)`. This method expects `&mut self`, so the first argument is a mutable borrow `&mut r`. The second argument is exactly the same, the number 2.
-
-As we described in Chapter 4.3 ["Dereferencing a Pointer Accesses Its Data"](ch04-02-references-and-borrowing.html#dereferencing-a-pointer-accesses-its-data), Rust will insert as many references and dereferences as needed to make the types match up for the `self` parameter. For example, here are two equivalent calls to `area` for a mutable reference to a boxed rectangle:
-
-```rust
-# struct Rectangle {
-#     width: u32,
-#     height: u32,
-# }
-# 
-# impl Rectangle {
-#     fn area(&self) -> u32 {
-#        self.width * self.height
-#      }
-# 
-#     fn set_width(&mut self, width: u32) {
-#         self.width = width;
-#     }
-# }
-# fn main() {
-    let r = &mut Box::new(Rectangle { 
-        width: 1,
-        height: 2
-    });
-    let area1 = r.area();
-    let area2 = Rectangle::area(&**r);
-    assert_eq!(area1, area2);
-# }
-```
-
-Rust will add two dereferences (once for the mutable reference, once for the box) and then one immutable borrow because `area` expects `&Rectangle`. Note that this is also a situation where a mutable reference is "downgraded" into a shared reference, like we discussed in [Chapter 4.2](ch04-02-references-and-borrowing.html#mutable-references-provide-unique-and-non-owning-access-to-data). Conversely, you would not be allowed to call `set_width` on a value of type `&Rectangle` or `&Box<Rectangle>`.
-
-{{#quiz ../quizzes/ch05-03-method-syntax-sec1.toml}}
-
-
-### Methods and Ownership
-
-Like we discussed in Chapter 4.2 ["References and Borrowing"](ch04-02-references-and-borrowing.html), methods must be called on structs that have the necessary permissions. As a running example, we will use these three methods that take `&self`, `&mut self`, and `self`, respectively.
-
-```rust,ignore
-impl Rectangle {    
-    fn area(&self) -> u32 {
-        self.width * self.height
-    }
-
-    fn set_width(&mut self, width: u32) {
-        self.width = width;
-    }
-
-    fn max(self, other: Rectangle) -> Rectangle {
-        Rectangle { 
-            width: self.width.max(other.width),
-            height: self.height.max(other.height),
-        }
-    }
-}
-```
-
-#### Reads and Writes with `&self` and `&mut self`
-
-If we make an owned rectangle with `let rect = Rectangle { ... }`, then `rect` has @Perm{read} and @Perm{own} permissions. With those permissions, it is permissible to call the `area` and `max` methods:
-
-```aquascope,permissions,boundaries,stepper
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-#impl Rectangle {    
-#  fn area(&self) -> u32 {
-#    self.width * self.height
-#  }
-#
-#  fn set_width(&mut self, width: u32) {
-#    self.width = width;
-#  }
-#
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-#}
-#fn main() {
-let rect = Rectangle {
-    width: 0,
-    height: 0
-};`(focus,rxpaths:^rect$)`
-println!("{}", rect.area());`{}`
-
-let other_rect = Rectangle { width: 1, height: 1 };
-let max_rect = rect.max(other_rect);`{}`
-#}
-```
-
-However, if we try to call `set_width`, we are missing the @Perm{write} permission:
-
-```aquascope,permissions,boundaries,shouldFail
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-#impl Rectangle {    
-#  fn area(&self) -> u32 {
-#    self.width * self.height
-#  }
-#
-#  fn set_width(&mut self, width: u32) {
-#    self.width = width;
-#  }
-#
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-#}
-#fn main() {
-let rect = Rectangle {
-    width: 0,
-    height: 0
-};
-rect.set_width(0);`{}`
-#}
-```
-
-Rust will reject this program with the corresponding error:
-
-```text
-error[E0596]: cannot borrow `rect` as mutable, as it is not declared as mutable
-  --> test.rs:28:1
-   |
-24 | let rect = Rectangle {
-   |     ---- help: consider changing this to be mutable: `mut rect`
-...
-28 | rect.set_width(0);
-   | ^^^^^^^^^^^^^^^^^ cannot borrow as mutable
-```
-
-We will get a similar error if we try to call `set_width` on an immutable reference to a `Rectangle`, even if the underlying rectangle is mutable:
-
-```aquascope,permissions,boundaries,stepper,shouldFail
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-#impl Rectangle {    
-#  fn area(&self) -> u32 {
-#    self.width * self.height
-#  }
-#
-#  fn set_width(&mut self, width: u32) {
-#    self.width = width;
-#  }
-#
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-#}
-#fn main() {
-// Added the mut keyword to the let-binding
-let mut rect = Rectangle {
-    width: 0,
-    height: 0
-};`(focus,rxpaths:^rect$)`
-rect.set_width(1);`{}`     // this is now ok
-
-let rect_ref = &rect;`(focus,rxpaths:^\*rect_ref$)`
-rect_ref.set_width(2);`{}` // but this is still not ok
-#}
-```
-
-#### Moves with `self`
-
-Calling a method that expects `self` will move the input struct (unless the struct implements `Copy`). For example, we cannot use a `Rectangle` after passing it to `max`:
-
-```aquascope,permissions,boundaries,stepper,shouldFail
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-#impl Rectangle {    
-#  fn area(&self) -> u32 {
-#    self.width * self.height
-#  }
-#
-#  fn set_width(&mut self, width: u32) {
-#    self.width = width;
-#  }
-#
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-#}
-#fn main() {
-let rect = Rectangle {
-    width: 0,
-    height: 0
-};`(focus,rxpaths:^rect$)`
-let other_rect = Rectangle { 
-    width: 1, 
-    height: 1 
-};
-let max_rect = rect.max(other_rect);`(focus,rxpaths:^rect$)`
-println!("{}", rect.area());`{}`
-#}
-```
-
-Once we call `rect.max(..)`, we move `rect` and so lose all permissions on it. Trying to compile this program would give us the following error:
-
-```text
-error[E0382]: borrow of moved value: `rect`
-  --> test.rs:33:16
-   |
-24 | let rect = Rectangle {
-   |     ---- move occurs because `rect` has type `Rectangle`, which does not implement the `Copy` trait
-...
-32 | let max_rect = rect.max(other_rect);
-   |                     --------------- `rect` moved due to this method call
-33 | println!("{}", rect.area());
-   |                ^^^^^^^^^^^ value borrowed here after move
-```
-
-A similar situation arises if we try to call a `self` method on a reference. For instance, say we tried to make a method `set_to_max` that assigns `self` to the output of `self.max(..)`:
-
-```aquascope,permissions,boundaries,stepper,shouldFail
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-impl Rectangle {    
-#  fn area(&self) -> u32 {
-#    self.width * self.height
-#  }
-#
-#  fn set_width(&mut self, width: u32) {
-#    self.width = width;
-#  }
-#
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-    fn set_to_max(&mut self, other: Rectangle) {`(focus,rxpaths:^\*self$)`
-        *self = self.max(other);`{}`
-    }
-}
-```
-
-Then we can see that `self` is missing @Perm{own} permissions in the operation `self.max(..)`. Rust therefore rejects this program with the following error:
-
-```text
-error[E0507]: cannot move out of `*self` which is behind a mutable reference
-  --> test.rs:23:17
-   |
-23 |         *self = self.max(other);
-   |                 ^^^^^----------
-   |                 |    |
-   |                 |    `*self` moved due to this method call
-   |                 move occurs because `*self` has type `Rectangle`, which does not implement the `Copy` trait
-   |
-```
-
-This is the same kind of error we discussed in Chapter 4.3 ["Copying vs. Moving Out of a Collection"](ch04-03-fixing-ownership-errors.html#fixing-an-unsafe-program-copying-vs-moving-out-of-a-collection).
-
-#### Good Moves and Bad Moves
-
-You might wonder: why does it matter if we move out of `*self`? In fact, for the case of `Rectangle`, it actually is safe to move out of `*self`, even though Rust doesn't let you do it. For example, if we simulate a program that calls the rejected `set_to_max`, you can see how nothing unsafe occurs:
-
-```aquascope,interpreter,shouldFail,horizontal
-#struct Rectangle {
-#    width: u32,
-#    height: u32,
-#}
-impl Rectangle {    
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-    fn set_to_max(&mut self, other: Rectangle) {
-        let max = self.max(other);`[]`
-        *self = max;
-    }
-}
-
-fn main() {
-    let mut rect = Rectangle { width: 0, height: 1 };
-    let other_rect = Rectangle { width: 1, height: 0 };`[]`
-    rect.set_to_max(other_rect);`[]`
-}
-```
-
-The reason it's safe to move out of `*self` is because `Rectangle` does not own any heap data.
-In fact, we can actually get Rust to compile `set_to_max` by simply adding `#[derive(Copy, Clone)]` to the definition of `Rectangle`:
-
-```aquascope,permissions,boundaries,stepper
-\#[derive(Copy, Clone)]
-struct Rectangle {
-    width: u32,
-    height: u32,
-}
-
-impl Rectangle {    
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h
-#    }
-#  }
-    fn set_to_max(&mut self, other: Rectangle) {`(focus,rxpaths:^\*self$)`
-        *self = self.max(other);`{}`
-    }
-}
-```
-
-Notice that unlike before, `self.max(other)` no longer requires the @Perm{own} permission on `*self` or `other`. Remember that `self.max(other)` desugars to `Rectangle::max(*self, other)`. The dereference `*self` does not require ownership over `*self` if `Rectangle` is copyable.
-
-You might wonder: why doesn't Rust automatically derive `Copy` for `Rectangle`? Rust does not auto-derive `Copy` for stability across API changes. Imagine that the author of the `Rectangle` type decided to add a `name: String` field. Then all client code that relies on `Rectangle` being `Copy` would suddenly get rejected by the compiler. To avoid that issue, API authors must explicitly add `#[derive(Copy)]` to indicate that they expect their struct to always be `Copy`.
-
-To better understand the issue, let's run a simulation. Say we added `name: String` to `Rectangle`. What would happen if Rust allowed `set_to_max` to compile?
-
-```aquascope,interpreter,shouldFail,horizontal
-struct Rectangle {
-    width: u32,
-    height: u32,
-    name: String,
-}
-
-impl Rectangle {    
-#  fn max(self, other: Self) -> Self {
-#    let w = self.width.max(other.width);
-#    let h = self.height.max(other.height);
-#    Rectangle { 
-#      width: w,
-#      height: h,
-#      name: String::from("max")
-#    }
-#  }
-    fn set_to_max(&mut self, other: Rectangle) {
-        `[]`let max = self.max(other);`[]`
-        drop(*self);`[]` // This is usually implicit,
-                         // but added here for clarity.
-        *self = max;
-    }
-}
-
-fn main() {
-    let mut r1 = Rectangle { 
-        width: 9, 
-        height: 9, 
-        name: String::from("r1") 
-    };
-    let r2 = Rectangle {
-        width: 16,
-        height: 16,
-        name: String::from("r2")
-    };
-    r1.set_to_max(r2);
-}
-```
-
-In this program, we call `set_to_max` with two rectangles `r1` and `r2`. `self` is a mutable reference to `r1` and `other` is a move of `r2`. After calling `self.max(other)`, the `max` method consumes ownership of both rectangles. When `max` returns, Rust deallocates both strings "r1" and "r2" in the heap. Notice the problem: at the location L2, `*self` is supposed to be readable and writable. However, `(*self).name` (actually `r1.name`) has been deallocated.
-
-Therefore when we do `*self = max`, we encounter undefined behavior. When we overwrite `*self`, Rust will implicitly drop the data previously in `*self`. To make that behavior explicit, we have added `drop(*self)`. After calling `drop(*self)`, Rust attempts to free `(*self).name` a second time. That action is a double-free, which is undefined behavior.
-
-So remember: when you see an error like "cannot move out of `*self`", that's usually because you're trying to call a `self` method on a reference like `&self` or `&mut self`. Rust is protecting you from a double-free.
-
-
 ## Summary
 
 Structs let you create custom types that are meaningful for your domain. By
@@ -655,9 +249,7 @@ structs have.
 But structs aren’t the only way you can create custom types: let’s turn to
 Rust’s enum feature to add another tool to your toolbox.
 
-{{#quiz ../quizzes/ch05-03-method-syntax-sec2.toml}}
-
 [enums]: ch06-00-enums.html
-[trait-objects]: ch18-02-trait-objects.md
+[trait-objects]: ch17-02-trait-objects.md
 [public]: ch07-03-paths-for-referring-to-an-item-in-the-module-tree.html#exposing-paths-with-the-pub-keyword
 [modules]: ch07-02-defining-modules-to-control-scope-and-privacy.html

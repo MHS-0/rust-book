@@ -5,7 +5,3 @@ book/
 target
 tmp
 
-/src/quiz
-/src/aquascope
-.aquascope-cache
-.nova

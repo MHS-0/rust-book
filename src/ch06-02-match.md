@@ -6,7 +6,7 @@ Rust has an extremely powerful control flow construct called `match` that
 allows you to compare a value against a series of patterns and then execute
 code based on which pattern matches. Patterns can be made up of literal values,
 variable names, wildcards, and many other things; [Chapter
-18][ch19-00-patterns]<!-- ignore --> covers all the different kinds of patterns
+18][ch18-00-patterns]<!-- ignore --> covers all the different kinds of patterns
 and what they do. The power of `match` comes from the expressiveness of the
 patterns and the fact that the compiler confirms that all possible cases are
 handled.
@@ -102,7 +102,7 @@ of the match arms, none of them match until we reach `Coin::Quarter(state)`. At
 that point, the binding for `state` will be the value `UsState::Alaska`. We can
 then use that binding in the `println!` expression, thus getting the inner
 state value out of the `Coin` enum variant for `Quarter`.
- 
+
 ### Matching with `Option<T>`
 
 In the previous section, we wanted to get the inner `T` value out of the `Some`
@@ -246,69 +246,9 @@ that doesn’t match a pattern in an earlier arm, and we don’t want to run any
 code in this case.
 
 There’s more about patterns and matching that we’ll cover in [Chapter
-19][ch19-00-patterns]<!-- ignore -->.
-
-<!-- BEGIN INTERVENTION: 1e4f082c-ffa4-4d33-8726-2dbcd72e1aa2 -->
-### How Matches Interact with Ownership
-
-If an enum contains non-copyable data like a String, then you should be careful with whether a match will move or borrow that data. For example, this program using an `Option<String>` will compile:
-
-```aquascope,permissions,stepper,boundaries
-# fn main() {
-let opt: Option<String> = 
-    Some(String::from("Hello world"));
-
-match opt {
-    Some(_) => println!("Some!"),
-    None => println!("None!")
-};
-
-println!("{:?}", opt);
-# }
-```
-
-But if we replace the placeholder in `Some(_)` with a variable name, like `Some(s)`, then the program will NOT compile:
-
-```aquascope,permissions,stepper,boundaries,shouldFail
-#fn main() {
-let opt: Option<String> = 
-    Some(String::from("Hello world"));
-
-match opt {
-    // _ became s
-    Some(s) => println!("Some: {}", s),
-    None => println!("None!")
-};
-
-println!("{:?}", opt);`{}`
-#}
-```
-
-
-`opt` is a plain enum &mdash; its type is `Option<String>` and not a reference like `&Option<String>`. Therefore a match on `opt` will move non-ignored fields like `s`. Notice how `opt` loses read and own permission sooner in the second program compared to the first. After the match expression, the data within `opt` has been moved, so it is illegal to read `opt` in the `println`.
-
-If we want to peek into `opt` without moving its contents, the idiomatic solution is to match on a reference:
-
-```aquascope,permissions,stepper,boundaries
-#fn main() {
-let opt: Option<String> = 
-    Some(String::from("Hello world"));
-
-// opt became &opt
-match &opt {
-    Some(s) => println!("Some: {}", s),
-    None => println!("None!")
-};
-
-println!("{:?}", opt);
-#}
-```
-
-Rust will “push down” the reference from the outer enum, `&Option<String>`, to the inner field, `&String`. Therefore `s` has type `&String`, and `opt` can be used after the match. To better understand this “pushing down” mechanism, see the section about [binding modes](https://doc.rust-lang.org/reference/patterns.html#binding-modes) in the Rust Reference.
-<!-- END INTERVENTION -->
-
-{{#quiz ../quizzes/ch06-02-match.toml}}
+18][ch18-00-patterns]<!-- ignore -->. For now, we’re going to move on to the
+`if let` syntax, which can be useful in situations where the `match` expression
+is a bit wordy.
 
 [tuples]: ch03-02-data-types.html#the-tuple-type
-
-[ch19-00-patterns]: ch19-00-patterns.html
+[ch18-00-patterns]: ch18-00-patterns.html
